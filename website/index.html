@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="description" content="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">
+<title>MeshMap - Meshtastic Node Map</title>
+<link rel="manifest" href="/site.webmanifest">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
+<link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" crossorigin="">
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+  }
+  html, body, #map {
+    height: 100%;
+    width: 100vw;
+  }
+  #header {
+    background-color: #fff;
+    box-shadow: 0 0 4px 0 rgb(0 0 0 / 40%);
+    color: #333;
+    display: flex;
+    gap: 2ch;
+    font-family: monospace;
+    padding: 0.5em 1em;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+  }
+  #header a {
+    color: inherit;
+    text-decoration: none;
+  }
+  #header a:hover {
+    text-decoration: underline;
+  }
+  #header div:nth-child(2) {
+    flex-grow: 1;
+    text-align: right;
+  }
+  table {
+    border-collapse: collapse;
+  }
+  table :is(th, td) {
+    text-align: left;
+    vertical-align: top;
+  }
+  table :is(th, td):nth-child(n+2) {
+    padding-left: 1em;
+  }
+  .break {
+    word-break: break-all;
+  }
+  .dark {
+    filter: invert(1) hue-rotate(180deg) brightness(1.25);
+  }
+  .dark .leaflet-shadow-pane {
+    display: none;
+  }
+  .dark .leaflet-popup-content-wrapper {
+    box-shadow: none;
+  }
+  .leaflet-top {
+    top: 2.5em;
+  }
+  .leaflet-tooltip-pane {
+    z-index: 750;
+  }
+  .leaflet-popup-content {
+    font-family: monospace;
+    font-size: 12px;
+  }
+  .leaflet-popup-content .title {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 3px;
+  }
+  .leaflet-popup-content table {
+    margin-top: 1em;
+  }
+</style>
+<div id="header">
+  <div><a href="https://meshmap.net/" title="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">MeshMap.net</a></div>
+  <div><a href="https://meshtastic.org/">Meshtastic</a></div>
+</div>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+<script>
+  const ipinfoToken = 'aeb066758afd49'
+  const updateInterval = 65000
+  const zoomLevelNode = 12
+  const markersByNode = {}
+  const neighborsByNode = {}
+  const nodesBySearchTitle = {}
+  const precisionMargins = [
+    16151245, 11939464, 5969732, 2984866, 1492433, 746217, 373108, 186554,
+    93277, 46639, 23319, 11660, 5830, 2915, 1457, 729,
+    364, 182, 91, 46, 23, 11, 6, 3,
+    1, 1, 0, 0, 0, 0, 0, 0
+  ]
+  // encodes html reserved characters
+  const html = str => str?.replace(/["&<>]/g, match => `&#${match.charCodeAt(0)};`)
+  // makes more human-readable time duration strings
+  const duration = d => {
+    let s = ''
+    if (d > 86400) {
+      s += `${Math.floor(d / 86400)}d `
+      d %= 86400
+    }
+    if (d > 3600) {
+      s += `${Math.floor(d / 3600)}h `
+      d %= 3600
+    }
+    s += `${Math.floor(d / 60)}min`
+    return s
+  }
+  const since = t => `${duration(Date.now() / 1000 - t)} ago`
+  // set theme
+  if (window.localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark')
+  }
+  // init map
+  const map = L.map('map', {
+    center: window.localStorage.getItem('center')?.split(',') ?? [25, 0],
+    zoom: window.localStorage.getItem('zoom') ?? 2,
+    zoomControl: false,
+    worldCopyJump: true,
+  })
+  // add tiles
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(map)
+  // add marker group
+  const markers = L.markerClusterGroup({
+    disableClusteringAtZoom: zoomLevelNode,
+    spiderfyOnMaxZoom: false,
+  }).addTo(map)
+  // add node details layer (neighbor lines, precision circle)
+  const detailsLayer = L.layerGroup().addTo(map)
+  map.on('click', () => detailsLayer.clearLayers())
+  // add search control
+  map.addControl(new L.Control.Search({
+    layer: markers,
+    initial: false,
+    position: 'topleft',
+    marker: false,
+    moveToLocation: (_, title) => showNode(nodesBySearchTitle[title]),
+  }))
+  // add geolocation control
+  L.easyButton({
+    position: 'topleft',
+    states: [
+      {
+        stateName: 'geolocation-button',
+        title: 'Center map to current IP geolocation',
+        icon: 'fa-crosshairs',
+        onClick: () => {
+          fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
+            .then(r => r.json())
+            .then(({loc}) => loc && map.flyTo(loc.split(','), zoomLevelNode))
+            .catch(e => console.error('Failed to set location:', e))
+        },
+      },
+    ],
+  }).addTo(map)
+  // add theme control
+  L.easyButton({
+    position: 'topright',
+    states: [
+      {
+        stateName: 'theme-light',
+        title: 'Toggle dark mode',
+        icon: 'fa-sun-o',
+        onClick: btn => {
+          const dark = document.body.classList.toggle('dark')
+          window.localStorage.setItem('theme', dark ? 'dark' : 'light')
+          btn.state(dark ? 'theme-dark' : 'theme-light')
+        },
+      },
+      {
+        stateName: 'theme-dark',
+        title: 'Toggle dark mode',
+        icon: 'fa-moon-o',
+        onClick: btn => {
+          const dark = document.body.classList.toggle('dark')
+          window.localStorage.setItem('theme', dark ? 'dark' : 'light')
+          btn.state(dark ? 'theme-dark' : 'theme-light')
+        },
+      },
+    ],
+  }).state(document.body.classList.contains('dark') ? 'theme-dark' : 'theme-light').addTo(map)
+  // add zoom control
+  L.control.zoom({position: 'bottomleft'}).addTo(map)
+  // track and store map position
+  map.on('moveend', () => {
+    const center = map.getCenter()
+    window.localStorage.setItem('center', [center.lat, center.lng].join(','))
+  })
+  map.on('zoomend', () => {
+    window.localStorage.setItem('zoom', map.getZoom())
+  })
+  // generates html for a node link
+  const nodeLink = (num, label) => `<a href="#${num}" onclick="showNode(${num});return false">${html(label)}</a>`
+  // updates node map markers
+  const updateNodes = data => Object.entries(data).forEach(([nodeNum, node]) => {
+    const {
+      longName, shortName, hwModel, role,
+      fwVersion, region, modemPreset, hasDefaultCh,
+      latitude, longitude, precision,
+      batteryLevel, voltage, chUtil, airUtilTx, uptime,
+      neighbors, seenBy
+    } = node
+    const id = `!${Number(nodeNum).toString(16)}`
+    neighborsByNode[nodeNum] ??= new Set()
+    if (neighbors) {
+      Object.keys(neighbors).forEach(neighborNum => {
+        neighborsByNode[neighborNum] ??= new Set()
+        neighborsByNode[neighborNum].add(nodeNum)
+        neighborsByNode[nodeNum].add(neighborNum)
+      })
+    }
+    const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+    const popupContent = `
+      <div class="title">${html(longName)} (${html(shortName)})</div>
+      <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
+      <table><tbody>
+      ${fwVersion ? `<tr><th>Firmware</th><td>${html(fwVersion)}</td></tr>` : ''}
+      ${region ? `<tr><th>Region</th><td>${html(region)}</td></tr>` : ''}
+      ${modemPreset ? `<tr><th>Modem preset</th><td>${html(modemPreset)}</td></tr>` : ''}
+      ${hasDefaultCh ? `<tr><th>Has default channel</th><td>Yes</td></tr>` : ''}
+      ${batteryLevel ? `<tr><th>Power</th><td>${batteryLevel > 100 ? 'Plugged in' : `${batteryLevel}%`}${voltage ? ` (${voltage.toFixed(1)}V)` : ''}</td></tr>` : ''}
+      ${chUtil ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(1)}%</td></tr>` : ''}
+      ${airUtilTx ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(1)}%</td></tr>` : ''}
+      ${uptime ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>` : ''}
+      ${precision && precisionMargins[precision-1] ?
+        `<tr><th>Location precision</th><td>&#177; ${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''
+      }
+      </tbody></table>
+      <table><thead>
+      <tr><th>Last seen</th><th>On MQTT topic</th></tr>
+      </thead><tbody>
+      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => {
+        topic = html(topic).replace(/\/!([0-9a-f]+)$/, (match, reporterId) => {
+          const reporterNum = Number(`0x${reporterId}`)
+          if (data[reporterNum] === undefined) {
+            return match
+          }
+          return `/${nodeLink(reporterNum, `!${reporterId}`)}`
+        })
+        return `
+          <tr>
+          <td>${since(seen)}</td>
+          <td class="break">${topic}</td>
+          </tr>
+        `
+      }).join('')}
+      </tbody></table>
+    `
+    const populateDetailsLayer = () => {
+      detailsLayer.clearLayers()
+      if (precision && precisionMargins[precision-1]) {
+        L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'})
+          .addTo(detailsLayer)
+      }
+      neighborsByNode[nodeNum].forEach(neighborNum => {
+        if (markersByNode[neighborNum] === undefined) {
+          return
+        }
+        const neighborId = `!${Number(neighborNum).toString(16)}`
+        const tooltipContent = `
+          <table><tbody>
+          <tr><th>Neighbor</th><td>${html(id)} &#60;-&#62; ${html(neighborId)}</td></tr>
+          <tr><th>Distance</th><td>${Math.round(map.distance(position, markersByNode[neighborNum].getLatLng())).toLocaleString()} m</td></tr>
+          ${neighbors?.[neighborNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[neighborNum].snr} dB</td></tr>` : ''}
+          ${neighbors?.[neighborNum]?.updated ? `<tr><th>Last seen</th><td>${since(neighbors[neighborNum].updated)}</td></tr>` : ''}
+          </tbody></table>
+        `
+        L.polyline([position, markersByNode[neighborNum].getLatLng()], {weight: 4})
+          .bindTooltip(tooltipContent, {sticky: true, opacity: 1.0})
+          .on('click', () => showNode(neighborNum))
+          .addTo(detailsLayer)
+      })
+    }
+    if (markersByNode[nodeNum] === undefined) {
+      const title = `${longName} (${shortName}) ${id}`
+      nodesBySearchTitle[title] = nodeNum
+      markersByNode[nodeNum] = L.marker(position, {alt: 'Node', title})
+        .bindPopup(popupContent, {maxWidth: 500})
+        .on('popupopen', () => {
+          history.replaceState(null, '', `#${nodeNum}`)
+          populateDetailsLayer()
+        })
+        .addTo(markers)
+    } else {
+      markersByNode[nodeNum].setPopupContent(popupContent)
+      markersByNode[nodeNum].setLatLng(position)
+      if (markersByNode[nodeNum].isPopupOpen()) {
+        populateDetailsLayer()
+      }
+    }
+  })
+  // fetches node data, updates map, repeats
+  const fetchNodes = async () => {
+    if (document.visibilityState === 'visible') {
+      try {
+        await fetch('/nodes.json').then(r => r.json()).then(updateNodes)
+      } catch (e) {
+        console.error('Failed to update nodes:', e)
+      }
+    }
+    setTimeout(() => fetchNodes(), updateInterval)
+  }
+  // centers map to node and opens popup
+  const showNode = nodeNum => {
+    if (markersByNode[nodeNum] === undefined) {
+      return false
+    }
+    map.setView(markersByNode[nodeNum].getLatLng(), Math.max(window.localStorage.getItem('zoom') ?? 0, zoomLevelNode))
+    setTimeout(() => markersByNode[nodeNum].openPopup(), 300)
+    return true
+  }
+  // keep URL fragment in sync
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash && !showNode(window.location.hash.slice(1))) {
+      history.replaceState(null, '', window.location.pathname)
+    }
+    if (!window.location.hash) {
+      map.closePopup()
+    }
+  })
+  map.on('popupclose', () => {
+    if (window.location.hash) {
+      history.replaceState(null, '', window.location.pathname)
+    }
+  })
+  // let's go!!!
+  fetchNodes().then(() => {
+    if (window.location.hash && !showNode(window.location.hash.slice(1))) {
+      history.replaceState(null, '', window.location.pathname)
+    }
+  })
+</script>

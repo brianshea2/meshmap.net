@@ -1,0 +1,11 @@
+FROM golang:latest AS build
+WORKDIR /build
+COPY go.mod ./
+COPY cmd/meshobserv ./
+COPY internal ./internal/
+RUN go mod tidy
+RUN go build -v -o meshobserv
+
+FROM debian:bookworm-slim
+COPY --from=build /build/meshobserv /usr/bin/
+ENTRYPOINT ["/usr/bin/meshobserv"]
