@@ -138,13 +138,14 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		region := mapReport.GetRegion().String()
 		modemPreset := mapReport.GetModemPreset().String()
 		hasDefaultCh := mapReport.GetHasDefaultChannel()
+		onlineLocalNodes := mapReport.GetNumOnlineLocalNodes()
 		latitude := mapReport.GetLatitudeI()
 		longitude := mapReport.GetLongitudeI()
 		precision := mapReport.GetPositionPrecision()
 		log.Printf(
-			"[msg] %v (%v) %s: {\"%v\" \"%v\" %v %v %v %v %v %v} (%v, %v) %v/32",
+			"[msg] %v (%v) %s: {\"%v\" \"%v\" %v %v %v %v %v %v %v} (%v, %v) %v/32",
 			from, topic, portNum,
-			longName, shortName, hwModel, role, fwVersion, region, modemPreset, hasDefaultCh,
+			longName, shortName, hwModel, role, fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
 			latitude, longitude, precision,
 		)
 		if len(longName) == 0 {
@@ -158,7 +159,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			Nodes[from] = meshtastic.NewNode(topic)
 		}
 		Nodes[from].UpdateUser(longName, shortName, hwModel, role)
-		Nodes[from].UpdateMapReport(fwVersion, region, modemPreset, hasDefaultCh)
+		Nodes[from].UpdateMapReport(fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes)
 		Nodes[from].UpdatePosition(latitude, longitude, precision)
 		Nodes[from].UpdateSeenBy(topic)
 		NodesMutex.Unlock()

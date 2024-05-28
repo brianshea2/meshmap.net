@@ -24,11 +24,12 @@ type Node struct {
 	HwModel   string `json:"hwModel"`
 	Role      string `json:"role"`
 	// MapReport
-	FwVersion     string `json:"fwVersion,omitempty"`
-	Region        string `json:"region,omitempty"`
-	ModemPreset   string `json:"modemPreset,omitempty"`
-	HasDefaultCh  bool   `json:"hasDefaultCh,omitempty"`
-	LastMapReport int64  `json:"lastMapReport,omitempty"`
+	FwVersion        string `json:"fwVersion,omitempty"`
+	Region           string `json:"region,omitempty"`
+	ModemPreset      string `json:"modemPreset,omitempty"`
+	HasDefaultCh     bool   `json:"hasDefaultCh,omitempty"`
+	OnlineLocalNodes uint32 `json:"onlineLocalNodes,omitempty"`
+	LastMapReport    int64  `json:"lastMapReport,omitempty"`
 	// Position
 	Latitude  int32  `json:"latitude"`
 	Longitude int32  `json:"longitude"`
@@ -66,6 +67,7 @@ func (node *Node) ClearMapReportData() {
 	node.Region = ""
 	node.ModemPreset = ""
 	node.HasDefaultCh = false
+	node.OnlineLocalNodes = 0
 	node.LastMapReport = 0
 }
 
@@ -136,11 +138,12 @@ func (node *Node) UpdateDeviceMetrics(batteryLevel uint32, voltage, chUtil, airU
 	node.LastDeviceMetrics = time.Now().Unix()
 }
 
-func (node *Node) UpdateMapReport(fwVersion, region, modemPreset string, hasDefaultCh bool) {
+func (node *Node) UpdateMapReport(fwVersion, region, modemPreset string, hasDefaultCh bool, onlineLocalNodes uint32) {
 	node.FwVersion = fwVersion
 	node.Region = region
 	node.ModemPreset = modemPreset
 	node.HasDefaultCh = hasDefaultCh
+	node.OnlineLocalNodes = onlineLocalNodes
 	node.LastMapReport = time.Now().Unix()
 }
 
