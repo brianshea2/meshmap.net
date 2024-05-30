@@ -185,7 +185,7 @@ func main() {
 	}
 	// connect to MQTT
 	client := &meshtastic.MQTTClient{
-		TopicRegex:     regexp.MustCompile(`/2/[ce]/[^/]+/![0-9a-f]+$|/2/map/$`),
+		TopicRegex:     regexp.MustCompile(`/2/e/[^/]+/![0-9a-f]+$|/2/map/$`),
 		BlockCipher:    meshtastic.NewBlockCipher(meshtastic.DefaultKey),
 		MessageHandler: handleMessage,
 	}
