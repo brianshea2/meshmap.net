@@ -251,23 +251,18 @@
       }
       </tbody></table>
       <table><thead>
-      <tr><th>Last seen</th><th>On MQTT topic</th></tr>
+      <tr><th>Last seen</th><th>via</th><th>on root topic</th></tr>
       </thead><tbody>
-      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => {
-        topic = html(topic).replace(/\/!([0-9a-f]+)$/, (match, reporterId) => {
-          const reporterNum = Number(`0x${reporterId}`)
-          if (data[reporterNum] === undefined) {
-            return match
-          }
-          return `/${nodeLink(reporterNum, `!${reporterId}`)}`
-        })
-        return `
-          <tr>
-          <td>${since(seen)}</td>
-          <td class="break">${topic}</td>
-          </tr>
-        `
-      }).join('')}
+      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => `
+        <tr>
+        <td>${since(seen)}</td>
+        <td>${topic.endsWith('/2/map/') ? 'map report' : topic.endsWith(`/${id}`) ? 'self' : topic.replace(/^.*\/(![0-9a-f]+)$/, (_, reporterId) => {
+          const reporterNum = Number(`0x${reporterId.slice(1)}`)
+          return data[reporterNum] ? nodeLink(reporterNum, reporterId) : reporterId
+        })}</td>
+        <td class="break">${html(topic.replace(/\/2\/e\/[^\/]+\/[^\/]+$|\/2\/map\/$/, ''))}</td>
+        </tr>
+      `).join('')}
       </tbody></table>
     `
     const populateDetailsLayer = () => {
