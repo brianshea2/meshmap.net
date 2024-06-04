@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	NodeExpiration     = 172800 // 2 days
+	NodeExpiration     = 86400 // 1 day
 	PruneWriteInterval = time.Minute
 )
 
