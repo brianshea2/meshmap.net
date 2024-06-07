@@ -132,7 +132,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		}
 		fwVersion := mapReport.GetFirmwareVersion()
 		// 2.3.1 has a bug that spams multiple MapReports every second
-		if len(fwVersion) > 5 && fwVersion[:5] == "2.3.1" {
+		if len(fwVersion) > 5 && fwVersion[:5] == "2.3.1" || strings.HasPrefix(fwVersion, "2.3.1.") {
 			return
 		}
 		longName := mapReport.GetLongName()
