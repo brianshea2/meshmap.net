@@ -251,18 +251,32 @@
       }
       </tbody></table>
       <table><thead>
-      <tr><th>Last seen</th><th>via</th><th>on root topic</th></tr>
+      <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
       </thead><tbody>
-      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => `
-        <tr>
-        <td>${since(seen)}</td>
-        <td>${topic.endsWith('/2/map/') ? 'map report' : topic.endsWith(`/${id}`) ? 'self' : topic.replace(/^.*\/(![0-9a-f]+)$/, (_, reporterId) => {
-          const reporterNum = Number(`0x${reporterId.slice(1)}`)
-          return data[reporterNum] ? nodeLink(reporterNum, reporterId) : reporterId
-        })}</td>
-        <td class="break">${html(topic.replace(/\/2\/e\/[^\/]+\/[^\/]+$|\/2\/map\/$/, ''))}</td>
-        </tr>
-      `).join('')}
+      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => {
+        const captures = topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/)
+        let reporter
+        if (!captures[3]) {
+          reporter = 'map report'
+        } else if (captures[3] === id) {
+          reporter = 'self'
+        } else {
+          reporter = parseInt(captures[3].slice(1), 16)
+          if (data[reporter]) {
+            reporter = nodeLink(reporter, captures[3])
+          } else {
+            reporter = captures[3]
+          }
+        }
+        return `
+          <tr>
+          <td>${since(seen)}</td>
+          <td>${reporter}</td>
+          <td class="break">${html(captures[1])}</td>
+          <td class="break">${html(captures[2] ?? '')}</td>
+          </tr>
+        `
+      }).join('')}
       </tbody></table>
     `
     const populateDetailsLayer = () => {
