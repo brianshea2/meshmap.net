@@ -255,25 +255,12 @@
       </thead><tbody>
       ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => {
         const captures = topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/)
-        let reporter
-        if (!captures[3]) {
-          reporter = 'map report'
-        } else if (captures[3] === id) {
-          reporter = 'self'
-        } else {
-          reporter = parseInt(captures[3].slice(1), 16)
-          if (data[reporter]) {
-            reporter = nodeLink(reporter, captures[3])
-          } else {
-            reporter = captures[3]
-          }
-        }
         return `
           <tr>
           <td>${since(seen)}</td>
-          <td>${reporter}</td>
+          <td>${captures[3] && captures[3] !== id ? (num => data[num] ? nodeLink(num, captures[3]) : captures[3])(parseInt(captures[3].slice(1), 16)) : 'self'}</td>
           <td class="break">${html(captures[1])}</td>
-          <td class="break">${html(captures[2] ?? '')}</td>
+          <td class="break">${html(captures[2] ?? 'n/a (MapReport)')}</td>
           </tr>
         `
       }).join('')}
