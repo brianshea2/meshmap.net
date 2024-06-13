@@ -20,6 +20,8 @@ import (
 
 const (
 	NodeExpiration     = 86400 // 1 day
+	NeighborExpiration = 7200 // 2 hr
+	MetricsExpiration  = 7200 // 2 hr
 	PruneWriteInterval = time.Minute
 )
 
@@ -202,7 +204,7 @@ func main() {
 		for {
 			time.Sleep(PruneWriteInterval)
 			NodesMutex.Lock()
-			Nodes.Prune(NodeExpiration, NodeExpiration, NodeExpiration, NodeExpiration)
+			Nodes.Prune(NodeExpiration, NeighborExpiration, MetricsExpiration, NodeExpiration)
 			if len(dbPath) > 0 {
 				valid := Nodes.GetValid()
 				err := valid.WriteFile(dbPath)
