@@ -253,17 +253,22 @@
       <table><thead>
       <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
       </thead><tbody>
-      ${Object.entries(seenBy).sort((a, b) => b[1] - a[1]).map(([topic, seen]) => {
-        const captures = topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/)
-        return `
+      ${Array.from(
+        new Map(
+          Object.entries(seenBy)
+            .map(([topic, seen]) => (m => ({seen, via: m[3] ?? id, root: m[1], chan: m[2]}))(topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/)))
+            .sort((a, b) => a.seen - b.seen)
+            .map(v => [v.via, v])
+        ).values(),
+        ({seen, via, root, chan}) => `
           <tr>
           <td>${since(seen)}</td>
-          <td>${captures[3] && captures[3] !== id ? (num => data[num] ? nodeLink(num, captures[3]) : captures[3])(parseInt(captures[3].slice(1), 16)) : 'self'}</td>
-          <td class="break">${html(captures[1])}</td>
-          <td class="break">${html(captures[2] ?? 'n/a (MapReport)')}</td>
+          <td>${via !== id ? (num => data[num] ? nodeLink(num, via) : via)(parseInt(via.slice(1), 16)) : 'self'}</td>
+          <td class="break">${html(root)}</td>
+          <td class="break">${html(chan ?? 'n/a (MapReport)')}</td>
           </tr>
         `
-      }).join('')}
+      ).reverse().join('')}
       </tbody></table>
     `
     const populateDetailsLayer = () => {
