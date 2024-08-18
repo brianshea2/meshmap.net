@@ -219,7 +219,7 @@
     const {
       longName, shortName, hwModel, role,
       fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
-      latitude, longitude, precision,
+      latitude, longitude, altitude, precision,
       batteryLevel, voltage, chUtil, airUtilTx, uptime,
       neighbors, seenBy
     } = node
@@ -246,6 +246,7 @@
       ${airUtilTx ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>` : ''}
       ${uptime ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>` : ''}
       ${onlineLocalNodes ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>` : ''}
+      ${altitude ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>` : ''}
       ${precision && precisionMargins[precision-1] ?
         `<tr><th>Location precision</th><td>&#177; ${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''
       }
