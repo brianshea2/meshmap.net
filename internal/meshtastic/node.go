@@ -33,6 +33,7 @@ type Node struct {
 	// Position
 	Latitude  int32  `json:"latitude"`
 	Longitude int32  `json:"longitude"`
+	Altitude  int32  `json:"altitude,omitempty"`
 	Precision uint32 `json:"precision,omitempty"`
 	// DeviceMetrics
 	BatteryLevel      uint32  `json:"batteryLevel,omitempty"`
@@ -157,9 +158,10 @@ func (node *Node) UpdateNeighborInfo(neighborNum uint32, snr float32) {
 	}
 }
 
-func (node *Node) UpdatePosition(latitude, longitude int32, precision uint32) {
+func (node *Node) UpdatePosition(latitude, longitude, altitude int32, precision uint32) {
 	node.Latitude = latitude
 	node.Longitude = longitude
+	node.Altitude = altitude
 	node.Precision = precision
 }
 

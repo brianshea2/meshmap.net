@@ -20,8 +20,8 @@ import (
 
 const (
 	NodeExpiration     = 86400 // 1 day
-	NeighborExpiration = 7200 // 2 hr
-	MetricsExpiration  = 7200 // 2 hr
+	NeighborExpiration = 7200  // 2 hr
+	MetricsExpiration  = 7200  // 2 hr
 	PruneWriteInterval = time.Minute
 )
 
@@ -44,8 +44,9 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		}
 		latitude := position.GetLatitudeI()
 		longitude := position.GetLongitudeI()
+		altitude := position.GetAltitude()
 		precision := position.GetPrecisionBits()
-		log.Printf("[msg] %v (%v) %s: (%v, %v) %v/32", from, topic, portNum, latitude, longitude, precision)
+		log.Printf("[msg] %v (%v) %s: (%v, %v, %v) %v/32", from, topic, portNum, latitude, longitude, altitude, precision)
 		if latitude == 0 && longitude == 0 {
 			return
 		}
@@ -53,7 +54,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		if Nodes[from] == nil {
 			Nodes[from] = meshtastic.NewNode(topic)
 		}
-		Nodes[from].UpdatePosition(latitude, longitude, precision)
+		Nodes[from].UpdatePosition(latitude, longitude, altitude, precision)
 		Nodes[from].UpdateSeenBy(topic)
 		NodesMutex.Unlock()
 	case generated.PortNum_NODEINFO_APP:
@@ -147,12 +148,13 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		onlineLocalNodes := mapReport.GetNumOnlineLocalNodes()
 		latitude := mapReport.GetLatitudeI()
 		longitude := mapReport.GetLongitudeI()
+		altitude := mapReport.GetAltitude()
 		precision := mapReport.GetPositionPrecision()
 		log.Printf(
-			"[msg] %v (%v) %s: {\"%v\" \"%v\" %v %v %v %v %v %v %v} (%v, %v) %v/32",
+			"[msg] %v (%v) %s: {\"%v\" \"%v\" %v %v %v %v %v %v %v} (%v, %v, %v) %v/32",
 			from, topic, portNum,
 			longName, shortName, hwModel, role, fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
-			latitude, longitude, precision,
+			latitude, longitude, altitude, precision,
 		)
 		if len(longName) == 0 {
 			return
@@ -166,7 +168,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		}
 		Nodes[from].UpdateUser(longName, shortName, hwModel, role)
 		Nodes[from].UpdateMapReport(fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes)
-		Nodes[from].UpdatePosition(latitude, longitude, precision)
+		Nodes[from].UpdatePosition(latitude, longitude, altitude, precision)
 		Nodes[from].UpdateSeenBy(topic)
 		NodesMutex.Unlock()
 	default:
