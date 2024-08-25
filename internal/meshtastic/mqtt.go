@@ -16,8 +16,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const RootTopic = "msh/#"
-
 var DefaultKey = []byte{
 	0xd4, 0xf1, 0xbb, 0x3a,
 	0x20, 0x29, 0x07, 0x59,
@@ -37,6 +35,7 @@ type MQTTClient struct {
 	TopicRegex     *regexp.Regexp
 	BlockCipher    cipher.Block
 	MessageHandler func(from uint32, topic string, portNum generated.PortNum, payload []byte)
+	topics         []string
 	mqtt.Client
 }
 
@@ -57,18 +56,25 @@ func (c *MQTTClient) Connect() error {
 		return err
 	}
 	log.Print("[info] connected")
-	token = c.Subscribe(RootTopic, 0, nil)
-	<-token.Done()
-	if err := token.Error(); err != nil {
-		return err
+	for i, region := range generated.Config_LoRaConfig_RegionCode_name {
+		if i == 0 {
+			continue
+		}
+		topic := "msh/" + region + "/#"
+		token = c.Subscribe(topic, 0, nil)
+		<-token.Done()
+		if err := token.Error(); err != nil {
+			return err
+		}
+		log.Printf("[info] subscribed to %v", topic)
+		c.topics = append(c.topics, topic)
 	}
-	log.Print("[info] subscribed")
 	return nil
 }
 
 func (c *MQTTClient) Disconnect() {
 	if c.IsConnected() {
-		if c.Unsubscribe(RootTopic).WaitTimeout(time.Second) {
+		if c.Unsubscribe(c.topics...).WaitTimeout(time.Second) {
 			log.Print("[info] unsubscribed")
 		}
 		c.Client.Disconnect(1000)
