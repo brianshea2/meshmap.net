@@ -19,7 +19,11 @@ These are general requirements. Refer to the [official docs](https://meshtastic.
 
 If your node can be heard by another node already reporting to MQTT, that's it!
 
-To enable MQTT reporting:
+#### Important update as of August, 2024
+Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/recent-public-mqtt-broker-changes/):
+> Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed.
+
+#### To enable MQTT reporting
 - Enable the MQTT module, using all default settings, possibly with a custom root topic
   - View nodes around your area on the map to find MQTT topics being used
 - Configure your node to connect to wifi or otherwise connect to the internet
