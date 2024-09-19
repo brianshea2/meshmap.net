@@ -24,6 +24,8 @@ Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/
 
 > Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed.
 
+The most accurate resolution that conforms to this specification is: 364 meters/1194 feet.
+
 Additionally, only the default [LoRa region](https://meshtastic.org/docs/configuration/radio/lora/#region)-based root topics (and all subtopics) are now monitored.
 
 #### To enable MQTT reporting
