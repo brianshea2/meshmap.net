@@ -22,7 +22,7 @@ If your node can be heard by another node already reporting to MQTT, that's it!
 #### Important update as of August, 2024
 Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/recent-public-mqtt-broker-changes/):
 
-> Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed.
+> Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed. (364 Meters/1194 Feet is the most accurate resolution allowed.)
 
 Additionally, only the default [LoRa region](https://meshtastic.org/docs/configuration/radio/lora/#region)-based root topics (and all subtopics) are now monitored.
 
