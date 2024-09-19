@@ -65,7 +65,7 @@
   .dark .leaflet-shadow-pane {
     display: none;
   }
-  .dark .leaflet-popup-content-wrapper {
+  .dark :is(.leaflet-tooltip, .leaflet-popup-content-wrapper, .leaflet-popup-tip) {
     box-shadow: none;
   }
   .leaflet-top {
@@ -103,7 +103,7 @@
   const zoomLevelNode = 10
   const markersByNode = {}
   const neighborsByNode = {}
-  const nodesBySearchTitle = {}
+  const nodesBySearchString = {}
   const precisionMargins = [
     11939464, 5969732, 2984866, 1492433, 746217, 373108, 186554, 93277,
     46639, 23319, 11660, 5830, 2915, 1457, 729, 364,
@@ -154,10 +154,11 @@
   // add search control
   map.addControl(new L.Control.Search({
     layer: markers,
+    propertyName: 'searchString',
     initial: false,
     position: 'topleft',
     marker: false,
-    moveToLocation: (_, title) => showNode(nodesBySearchTitle[title]),
+    moveToLocation: (_, s) => showNode(nodesBySearchString[s]),
   }))
   // add geolocation control
   L.easyButton({
@@ -233,6 +234,7 @@
       })
     }
     const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+    const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(Math.max(...Object.values(seenBy)))}`
     const popupContent = `
       <div class="title">${html(longName)} (${html(shortName)})</div>
       <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
@@ -283,7 +285,7 @@
           return
         }
         const neighborId = `!${Number(neighborNum).toString(16)}`
-        const tooltipContent = `
+        const neighborContent = `
           <table><tbody>
           <tr><th>Neighbor</th><td>${html(id)} &#60;-&#62; ${html(neighborId)}</td></tr>
           <tr><th>Distance</th><td>${Math.round(map.distance(position, markersByNode[neighborNum].getLatLng())).toLocaleString()} m</td></tr>
@@ -292,15 +294,16 @@
           </tbody></table>
         `
         L.polyline([position, markersByNode[neighborNum].getLatLng()], {weight: 4})
-          .bindTooltip(tooltipContent, {sticky: true, opacity: 1.0})
+          .bindTooltip(neighborContent, {sticky: true, opacity: 1.0})
           .on('click', () => showNode(neighborNum))
           .addTo(detailsLayer)
       })
     }
     if (markersByNode[nodeNum] === undefined) {
-      const title = `${longName} (${shortName}) ${id}`
-      nodesBySearchTitle[title] = nodeNum
-      markersByNode[nodeNum] = L.marker(position, {alt: 'Node', title})
+      const searchString = `${longName} (${shortName}) ${id}`
+      nodesBySearchString[searchString] = nodeNum
+      markersByNode[nodeNum] = L.marker(position, {alt: 'Node', searchString})
+        .bindTooltip(tooltipContent)
         .bindPopup(popupContent, {maxWidth: 500})
         .on('popupopen', () => {
           history.replaceState(null, '', `#${nodeNum}`)
@@ -308,6 +311,7 @@
         })
         .addTo(markers)
     } else {
+      markersByNode[nodeNum].setTooltipContent(tooltipContent)
       markersByNode[nodeNum].setPopupContent(popupContent)
       markersByNode[nodeNum].setLatLng(position)
       if (markersByNode[nodeNum].isPopupOpen()) {
