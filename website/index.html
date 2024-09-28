@@ -239,7 +239,9 @@
       })
     }
     const position = L.latLng([latitude, longitude].map(x => x / 10000000))
-    const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(Math.max(...Object.values(seenBy)))}`
+    const lastSeen = Math.max(...Object.values(seenBy))
+    const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 172800
+    const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
     const popupContent = `
       <div class="title">${html(longName)} (${html(shortName)})</div>
       <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
@@ -307,7 +309,7 @@
     if (markersByNode[nodeNum] === undefined) {
       const searchString = `${longName} (${shortName}) ${id}`
       nodesBySearchString[searchString] = nodeNum
-      markersByNode[nodeNum] = L.marker(position, {alt: 'Node', searchString})
+      markersByNode[nodeNum] = L.marker(position, {alt: 'Node', opacity, searchString})
         .bindTooltip(tooltipContent)
         .bindPopup(popupContent, {maxWidth: 500})
         .on('popupopen', () => {
@@ -316,6 +318,7 @@
         })
         .addTo(markers)
     } else {
+      markersByNode[nodeNum].setOpacity(opacity)
       markersByNode[nodeNum].setTooltipContent(tooltipContent)
       markersByNode[nodeNum].setPopupContent(popupContent)
       markersByNode[nodeNum].setLatLng(position)
