@@ -240,7 +240,7 @@
     }
     const position = L.latLng([latitude, longitude].map(x => x / 10000000))
     const lastSeen = Math.max(...Object.values(seenBy))
-    const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 172800
+    const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 129600
     const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
     const popupContent = `
       <div class="title">${html(longName)} (${html(shortName)})</div>
