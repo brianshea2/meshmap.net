@@ -133,15 +133,11 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			log.Printf("[warn] could not parse MapReport payload from %v on %v: %v", from, topic, err)
 			return
 		}
-		fwVersion := mapReport.GetFirmwareVersion()
-		// 2.3.1 has a bug that spams multiple MapReports every second
-		if len(fwVersion) > 6 && fwVersion[:6] == "2.3.1." {
-			return
-		}
 		longName := mapReport.GetLongName()
 		shortName := mapReport.GetShortName()
 		hwModel := mapReport.GetHwModel().String()
 		role := mapReport.GetRole().String()
+		fwVersion := mapReport.GetFirmwareVersion()
 		region := mapReport.GetRegion().String()
 		modemPreset := mapReport.GetModemPreset().String()
 		hasDefaultCh := mapReport.GetHasDefaultChannel()
