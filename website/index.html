@@ -49,7 +49,7 @@
     text-decoration: none;
   }
   #header a:hover {
-    text-decoration: underline;
+    opacity: 0.7;
   }
   #header div:nth-child(2) {
     flex-grow: 1;
@@ -98,14 +98,14 @@
 <div id="header">
   <div><a href="https://meshmap.net/" title="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">MeshMap</a></div>
   <div>
-    <span
-      onclick="window.localStorage.setItem('theme', document.body.classList.toggle('dark') ? 'dark' : 'light')"
-      style="cursor:pointer;"
+    <a
+      href="#"
+      onclick="window.localStorage.setItem('theme', document.body.classList.toggle('dark') ? 'dark' : 'light');return false"
       title="Toggle dark mode"
-    ><i class="fa fa-moon-o fa-fw dark-hidden"></i><i class="fa fa-sun-o fa-fw dark-only"></i></span>
+    ><i class="fa fa-moon-o fa-lg dark-hidden"></i><i class="fa fa-sun-o fa-lg dark-only"></i></a>
   </div>
+  <div><a href="https://github.com/brianshea2/meshmap.net" title="GitHub"><i class="fa fa-github fa-lg"></i></a></div>
   <div><a href="https://meshtastic.org/">Meshtastic</a></div>
-  <div><a href="https://github.com/brianshea2/meshmap.net">GitHub</a></div>
 </div>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -184,7 +184,7 @@
       {
         stateName: 'geolocation-button',
         title: 'Center map to current IP geolocation',
-        icon: 'fa-crosshairs',
+        icon: 'fa-crosshairs fa-lg',
         onClick: () => {
           fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
             .then(r => r.json())
