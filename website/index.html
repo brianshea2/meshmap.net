@@ -71,9 +71,6 @@
   .leaflet-top {
     top: 4em;
   }
-  .leaflet-tooltip-pane {
-    z-index: 750;
-  }
   .leaflet-tooltip, .leaflet-popup-content {
     font-family: "Roboto", sans-serif;
     font-size: 12px;
@@ -288,7 +285,7 @@
           </tbody></table>
         `
         L.polyline([position, markersByNode[neighborNum].getLatLng()], {weight: 4})
-          .bindTooltip(neighborContent, {sticky: true, opacity: 1.0})
+          .bindTooltip(neighborContent, {sticky: true})
           .on('click', () => showNode(neighborNum))
           .addTo(detailsLayer)
       })
