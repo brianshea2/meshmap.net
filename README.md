@@ -13,9 +13,13 @@ A nearly live map of [Meshtastic](https://meshtastic.org/) nodes seen by the off
 ### How do I get my node on the map?
 These are general requirements. Refer to the [official docs](https://meshtastic.org/docs/configuration/) or reach out to the fantastic Meshtastic community
 (such as at [r/meshtastic](https://www.reddit.com/r/meshtastic/)) for additional support.
+- First, make sure you are running a [recent firmware](https://meshtastic.org/downloads/) version
 - Use the default primary channel and encryption key
+- Enable "OK to MQTT" in LoRa configuration (signaling you want your messages uplinked via MQTT)
 - Enable position reports from your node
   - This may mean enabling your node's built-in GPS, sharing your phone's location via the app, or setting a fixed position
+  - Ensure "Position enabled" is enabled on the primary channel
+  - Precise locations are filtered (see important update below -- the default precision will work)
 
 If your node can be heard by another node already reporting to MQTT, that's it!
 
@@ -24,7 +28,7 @@ Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/
 
 > Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed.
 
-The most accurate resolution that conforms to this specification is: 364 meters/1194 feet.
+The most accurate resolution that conforms to this specification is 364 meters/1194 feet.
 
 Additionally, only the default [LoRa region](https://meshtastic.org/docs/configuration/radio/lora/#region)-based root topics (and all subtopics) are now monitored.
 
