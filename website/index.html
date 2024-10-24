@@ -13,18 +13,22 @@
 <link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" crossorigin="">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" crossorigin="">
 <style>
-  @media (hover: none) {
-    .leaflet-tooltip-pane {
-      display: none;
-    }
+  html, body, #map {
+    height: 100%;
+    width: 100vw;
   }
   body {
     margin: 0;
     padding: 0;
   }
-  html, body, #map {
-    height: 100%;
-    width: 100vw;
+  body.dark {
+    filter: invert(1) hue-rotate(180deg) brightness(1.25);
+  }
+  body.dark .dark-hidden {
+    display: none;
+  }
+  body:not(.dark) .dark-only {
+    display: none;
   }
   #header {
     background-color: #fff;
@@ -64,22 +68,13 @@
   .break {
     word-break: break-all;
   }
-  .dark {
-    filter: invert(1) hue-rotate(180deg) brightness(1.25);
-  }
-  .dark .leaflet-shadow-pane {
-    display: none;
-  }
-  .dark :is(.leaflet-tooltip, .leaflet-popup-content-wrapper, .leaflet-popup-tip) {
-    box-shadow: none;
-  }
   .leaflet-top {
     top: 4em;
   }
   .leaflet-tooltip-pane {
     z-index: 750;
   }
-  .leaflet-popup-content {
+  .leaflet-tooltip, .leaflet-popup-content {
     font-family: "Roboto", sans-serif;
     font-size: 12px;
   }
@@ -91,9 +86,27 @@
   .leaflet-popup-content table {
     margin-top: 1em;
   }
+  body.dark .leaflet-shadow-pane {
+    display: none;
+  }
+  body.dark :is(.leaflet-tooltip, .leaflet-popup-content-wrapper, .leaflet-popup-tip) {
+    box-shadow: none;
+  }
+  @media (hover: none) {
+    .leaflet-tooltip-pane {
+      display: none;
+    }
+  }
 </style>
 <div id="header">
-  <div><a href="https://meshmap.net/" title="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">MeshMap.net</a></div>
+  <div><a href="https://meshmap.net/" title="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">MeshMap</a></div>
+  <div>
+    <span
+      onclick="window.localStorage.setItem('theme', document.body.classList.toggle('dark') ? 'dark' : 'light')"
+      style="cursor:pointer;"
+      title="Toggle dark mode"
+    ><i class="fa fa-moon-o fa-fw dark-hidden"></i><i class="fa fa-sun-o fa-fw dark-only"></i></span>
+  </div>
   <div><a href="https://meshtastic.org/">Meshtastic</a></div>
   <div><a href="https://github.com/brianshea2/meshmap.net">GitHub</a></div>
 </div>
@@ -165,9 +178,11 @@
     marker: false,
     moveToLocation: (_, s) => showNode(nodesBySearchString[s]),
   }))
+  // add zoom control
+  L.control.zoom({position: 'topright'}).addTo(map)
   // add geolocation control
   L.easyButton({
-    position: 'topleft',
+    position: 'topright',
     states: [
       {
         stateName: 'geolocation-button',
@@ -182,34 +197,6 @@
       },
     ],
   }).addTo(map)
-  // add theme control
-  L.easyButton({
-    position: 'topright',
-    states: [
-      {
-        stateName: 'theme-light',
-        title: 'Toggle dark mode',
-        icon: 'fa-sun-o',
-        onClick: btn => {
-          const dark = document.body.classList.toggle('dark')
-          window.localStorage.setItem('theme', dark ? 'dark' : 'light')
-          btn.state(dark ? 'theme-dark' : 'theme-light')
-        },
-      },
-      {
-        stateName: 'theme-dark',
-        title: 'Toggle dark mode',
-        icon: 'fa-moon-o',
-        onClick: btn => {
-          const dark = document.body.classList.toggle('dark')
-          window.localStorage.setItem('theme', dark ? 'dark' : 'light')
-          btn.state(dark ? 'theme-dark' : 'theme-light')
-        },
-      },
-    ],
-  }).state(document.body.classList.contains('dark') ? 'theme-dark' : 'theme-light').addTo(map)
-  // add zoom control
-  L.control.zoom({position: 'bottomleft'}).addTo(map)
   // track and store map position
   map.on('moveend', () => {
     const center = map.getCenter()
