@@ -33,6 +33,7 @@ func NewBlockCipher(key []byte) cipher.Block {
 
 type MQTTClient struct {
 	TopicRegex     *regexp.Regexp
+	Accept         func(from uint32) bool
 	BlockCipher    cipher.Block
 	MessageHandler func(from uint32, topic string, portNum generated.PortNum, payload []byte)
 	topics         []string
@@ -103,6 +104,10 @@ func (c *MQTTClient) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 	from := packet.GetFrom()
 	if from == 0 {
 		log.Printf("[warn] skipping MeshPacket from unknown on %v", topic)
+		return
+	}
+	// check sender
+	if c.Accept != nil && !c.Accept(from) {
 		return
 	}
 	// get Data, try decoded first
