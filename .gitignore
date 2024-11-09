@@ -1,2 +1,3 @@
 internal/meshtastic/generated/*
 website/nodes.json
+blocklist.txt
