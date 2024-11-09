@@ -173,8 +173,9 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 }
 
 func main() {
-	var dbPath string
+	var dbPath, blockedPath string
 	flag.StringVar(&dbPath, "f", "", "node database `file`")
+	flag.StringVar(&blockedPath, "b", "", "node blocklist `file`")
 	flag.Parse()
 	// load or make NodeDB
 	if len(dbPath) > 0 {
@@ -187,9 +188,34 @@ func main() {
 	if Nodes == nil {
 		Nodes = make(meshtastic.NodeDB)
 	}
+	// load node blocklist
+	blocked := make(map[uint32]struct{})
+	if len(blockedPath) > 0 {
+		f, err := os.Open(blockedPath)
+		if err != nil {
+			log.Fatalf("[error] open blocklist: %v", err)
+		}
+		s := bufio.NewScanner(f)
+		for s.Scan() {
+			n, err := strconv.ParseUint(s.Text(), 10, 32)
+			if err == nil {
+				blocked[uint32(n)] = struct{}{}
+				log.Printf("[info] node %v blocked", n)
+			}
+		}
+		f.Close()
+		err = s.Err()
+		if err != nil {
+			log.Fatalf("[error] read blocklist: %v", err)
+		}
+	}
 	// connect to MQTT
 	client := &meshtastic.MQTTClient{
-		TopicRegex:     regexp.MustCompile(`/2/e/[^/]+/![0-9a-f]+$|/2/map/$`),
+		TopicRegex: regexp.MustCompile(`/2/e/[^/]+/![0-9a-f]+$|/2/map/$`),
+		Accept: func(from uint32) bool {
+			_, found := blocked[from]
+			return !found
+		},
 		BlockCipher:    meshtastic.NewBlockCipher(meshtastic.DefaultKey),
 		MessageHandler: handleMessage,
 	}
