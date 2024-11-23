@@ -234,11 +234,11 @@
       ${region ? `<tr><th>Region</th><td>${html(region)}</td></tr>` : ''}
       ${modemPreset ? `<tr><th>Modem preset</th><td>${html(modemPreset)}</td></tr>` : ''}
       ${hasDefaultCh ? `<tr><th>Has default channel</th><td>True</td></tr>` : ''}
+      ${onlineLocalNodes ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>` : ''}
       ${batteryLevel ? `<tr><th>Power</th><td>${batteryLevel > 100 ? 'Plugged in' : `${batteryLevel}%`}${voltage ? ` (${voltage.toFixed(2)}V)` : ''}</td></tr>` : ''}
       ${chUtil ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>` : ''}
       ${airUtilTx ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>` : ''}
       ${uptime ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>` : ''}
-      ${onlineLocalNodes ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>` : ''}
       ${altitude ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>` : ''}
       ${precision && precisionMargins[precision-1] ?
         `<tr><th>Location precision</th><td>&#177; ${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''
