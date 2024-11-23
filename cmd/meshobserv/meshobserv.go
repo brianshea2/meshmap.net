@@ -101,6 +101,20 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			}
 			Nodes[from].UpdateDeviceMetrics(batteryLevel, voltage, chUtil, airUtilTx, uptime)
 			NodesMutex.Unlock()
+		} else if envMetrics := telemetry.GetEnvironmentMetrics(); envMetrics != nil {
+			temperature := envMetrics.GetTemperature()
+			relativeHumidity := envMetrics.GetRelativeHumidity()
+			barometricPressure := envMetrics.GetBarometricPressure()
+			log.Printf(
+				"[msg] %v (%v) %s: EnvironmentMetrics{temperature: %vC; humidity: %v%%; pressure: %vhPA}",
+				from, topic, portNum, temperature, relativeHumidity, barometricPressure,
+			)
+			NodesMutex.Lock()
+			if Nodes[from] == nil {
+				Nodes[from] = meshtastic.NewNode(topic)
+			}
+			Nodes[from].UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure)
+			NodesMutex.Unlock()
 		}
 	case generated.PortNum_NEIGHBORINFO_APP:
 		var neighborInfo generated.NeighborInfo

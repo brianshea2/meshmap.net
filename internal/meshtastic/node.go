@@ -42,6 +42,11 @@ type Node struct {
 	AirUtilTx         float32 `json:"airUtilTx,omitempty"`
 	Uptime            uint32  `json:"uptime,omitempty"`
 	LastDeviceMetrics int64   `json:"lastDeviceMetrics,omitempty"`
+	// EnvironmentMetrics
+	Temperature            float32 `json:"temperature,omitempty"`
+	RelativeHumidity       float32 `json:"relativeHumidity,omitempty"`
+	BarometricPressure     float32 `json:"barometricPressure,omitempty"`
+	LastEnvironmentMetrics int64   `json:"lastEnvironmentMetrics,omitempty"`
 	// NeighborInfo
 	Neighbors map[uint32]*NeighborInfo `json:"neighbors,omitempty"`
 	// key=mqtt topic, value=first seen/last position update
@@ -61,6 +66,13 @@ func (node *Node) ClearDeviceMetrics() {
 	node.AirUtilTx = 0
 	node.Uptime = 0
 	node.LastDeviceMetrics = 0
+}
+
+func (node *Node) ClearEnvironmentMetrics() {
+	node.Temperature = 0
+	node.RelativeHumidity = 0
+	node.BarometricPressure = 0
+	node.LastEnvironmentMetrics = 0
 }
 
 func (node *Node) ClearMapReportData() {
@@ -85,7 +97,7 @@ func (node *Node) IsValid() bool {
 	return true
 }
 
-func (node *Node) Prune(seenByTtl, neighborTtl, deviceMetricsTtl, mapReportTtl int64) {
+func (node *Node) Prune(seenByTtl, neighborTtl, metricsTtl, mapReportTtl int64) {
 	now := time.Now().Unix()
 	// SeenBy
 	for topic, lastSeen := range node.SeenBy {
@@ -121,8 +133,12 @@ func (node *Node) Prune(seenByTtl, neighborTtl, deviceMetricsTtl, mapReportTtl i
 		delete(node.Neighbors, toDelete)
 	}
 	// DeviceMetrics
-	if node.LastDeviceMetrics > 0 && node.LastDeviceMetrics+deviceMetricsTtl < now {
+	if node.LastDeviceMetrics > 0 && node.LastDeviceMetrics+metricsTtl < now {
 		node.ClearDeviceMetrics()
+	}
+	// EnvironmentMetrics
+	if node.LastEnvironmentMetrics > 0 && node.LastEnvironmentMetrics+metricsTtl < now {
+		node.ClearEnvironmentMetrics()
 	}
 	// MapReport
 	if node.LastMapReport > 0 && node.LastMapReport+mapReportTtl < now {
@@ -137,6 +153,13 @@ func (node *Node) UpdateDeviceMetrics(batteryLevel uint32, voltage, chUtil, airU
 	node.AirUtilTx = airUtilTx
 	node.Uptime = uptime
 	node.LastDeviceMetrics = time.Now().Unix()
+}
+
+func (node *Node) UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure float32) {
+	node.Temperature = temperature
+	node.RelativeHumidity = relativeHumidity
+	node.BarometricPressure = barometricPressure
+	node.LastEnvironmentMetrics = time.Now().Unix()
 }
 
 func (node *Node) UpdateMapReport(fwVersion, region, modemPreset string, hasDefaultCh bool, onlineLocalNodes uint32) {
@@ -178,9 +201,9 @@ func (node *Node) UpdateUser(longName, shortName, hwModel, role string) {
 
 type NodeDB map[uint32]*Node
 
-func (db NodeDB) Prune(seenByTtl, neighborTtl, deviceMetricsTtl, mapReportTtl int64) {
+func (db NodeDB) Prune(seenByTtl, neighborTtl, metricsTtl, mapReportTtl int64) {
 	for nodeNum, node := range db {
-		node.Prune(seenByTtl, neighborTtl, deviceMetricsTtl, mapReportTtl)
+		node.Prune(seenByTtl, neighborTtl, metricsTtl, mapReportTtl)
 		if len(node.SeenBy) == 0 {
 			delete(db, nodeNum)
 		}
