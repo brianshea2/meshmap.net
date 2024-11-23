@@ -211,6 +211,7 @@
       fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
       latitude, longitude, altitude, precision,
       batteryLevel, voltage, chUtil, airUtilTx, uptime,
+      temperature, relativeHumidity, barometricPressure,
       neighbors, seenBy
     } = node
     const id = `!${Number(nodeNum).toString(16)}`
@@ -239,6 +240,9 @@
       ${chUtil ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>` : ''}
       ${airUtilTx ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>` : ''}
       ${uptime ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>` : ''}
+      ${temperature ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>` : ''}
+      ${relativeHumidity ? `<tr><th>Relative Humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>` : ''}
+      ${barometricPressure ? `<tr><th>Barometric Pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
       ${altitude ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>` : ''}
       ${precision && precisionMargins[precision-1] ?
         `<tr><th>Location precision</th><td>&#177; ${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''
