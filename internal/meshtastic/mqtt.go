@@ -31,6 +31,7 @@ func NewBlockCipher(key []byte) cipher.Block {
 }
 
 type MQTTClient struct {
+	Topics         []string
 	TopicRegex     *regexp.Regexp
 	Accept         func(from uint32) bool
 	BlockCipher    cipher.Block
@@ -56,11 +57,8 @@ func (c *MQTTClient) Connect() error {
 	}
 	log.Print("[info] connected")
 	topics := make(map[string]byte)
-	for i, region := range generated.Config_LoRaConfig_RegionCode_name {
-		if i == 0 {
-			continue
-		}
-		topics["msh/"+region+"/#"] = 0
+	for _, topic := range c.Topics {
+		topics[topic] = 0
 	}
 	token = c.SubscribeMultiple(topics, nil)
 	<-token.Done()
