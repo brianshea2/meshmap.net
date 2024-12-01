@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/brianshea2/meshmap.net/internal/meshtastic/generated"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -56,18 +55,19 @@ func (c *MQTTClient) Connect() error {
 		return err
 	}
 	log.Print("[info] connected")
+	topics := make(map[string]byte)
 	for i, region := range generated.Config_LoRaConfig_RegionCode_name {
 		if i == 0 {
 			continue
 		}
-		topic := "msh/" + region + "/#"
-		token = c.Subscribe(topic, 0, nil)
-		<-token.Done()
-		if err := token.Error(); err != nil {
-			return err
-		}
-		log.Printf("[info] subscribed to %v", topic)
+		topics["msh/"+region+"/#"] = 0
 	}
+	token = c.SubscribeMultiple(topics, nil)
+	<-token.Done()
+	if err := token.Error(); err != nil {
+		return err
+	}
+	log.Print("[info] subscribed")
 	return nil
 }
 
