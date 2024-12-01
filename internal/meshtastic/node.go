@@ -12,6 +12,14 @@ const (
 	NeighborLimit = 100
 )
 
+func cleanFloat(f float32) float32 {
+	if f != f {
+		// IEEE 754 says that only NaNs satisfy f != f
+		return 0
+	}
+	return f
+}
+
 type NeighborInfo struct {
 	Snr     float32 `json:"snr,omitempty"`
 	Updated int64   `json:"updated"`
@@ -148,17 +156,17 @@ func (node *Node) Prune(seenByTtl, neighborTtl, metricsTtl, mapReportTtl int64) 
 
 func (node *Node) UpdateDeviceMetrics(batteryLevel uint32, voltage, chUtil, airUtilTx float32, uptime uint32) {
 	node.BatteryLevel = batteryLevel
-	node.Voltage = voltage
-	node.ChUtil = chUtil
-	node.AirUtilTx = airUtilTx
+	node.Voltage = cleanFloat(voltage)
+	node.ChUtil = cleanFloat(chUtil)
+	node.AirUtilTx = cleanFloat(airUtilTx)
 	node.Uptime = uptime
 	node.LastDeviceMetrics = time.Now().Unix()
 }
 
 func (node *Node) UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure float32) {
-	node.Temperature = temperature
-	node.RelativeHumidity = relativeHumidity
-	node.BarometricPressure = barometricPressure
+	node.Temperature = cleanFloat(temperature)
+	node.RelativeHumidity = cleanFloat(relativeHumidity)
+	node.BarometricPressure = cleanFloat(barometricPressure)
 	node.LastEnvironmentMetrics = time.Now().Unix()
 }
 
@@ -176,7 +184,7 @@ func (node *Node) UpdateNeighborInfo(neighborNum uint32, snr float32) {
 		node.Neighbors = make(map[uint32]*NeighborInfo)
 	}
 	node.Neighbors[neighborNum] = &NeighborInfo{
-		Snr:     snr,
+		Snr:     cleanFloat(snr),
 		Updated: time.Now().Unix(),
 	}
 }
