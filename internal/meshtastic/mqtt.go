@@ -36,7 +36,6 @@ type MQTTClient struct {
 	Accept         func(from uint32) bool
 	BlockCipher    cipher.Block
 	MessageHandler func(from uint32, topic string, portNum generated.PortNum, payload []byte)
-	topics         []string
 	mqtt.Client
 }
 
@@ -68,16 +67,12 @@ func (c *MQTTClient) Connect() error {
 			return err
 		}
 		log.Printf("[info] subscribed to %v", topic)
-		c.topics = append(c.topics, topic)
 	}
 	return nil
 }
 
 func (c *MQTTClient) Disconnect() {
 	if c.IsConnected() {
-		if c.Unsubscribe(c.topics...).WaitTimeout(time.Second) {
-			log.Print("[info] unsubscribed")
-		}
 		c.Client.Disconnect(1000)
 	}
 }
