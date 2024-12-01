@@ -30,12 +30,9 @@ Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/
 
 The most accurate resolution that conforms to this specification is 364 meters/1194 feet.
 
-Additionally, only the default [LoRa region](https://meshtastic.org/docs/configuration/radio/lora/#region)-based root topics (and all subtopics) are now monitored.
-
 #### To enable MQTT reporting
 - Enable the MQTT module, using all default settings, possibly with a custom root topic
   - View nodes around your area on the map to find MQTT topics being used
-  - Only the official [LoRa region](https://meshtastic.org/docs/configuration/radio/lora/#region)-based root topics (and all subtopics) are monitored
 - Configure your node to connect to wifi or otherwise connect to the internet
 - Enable MQTT uplink on your primary channel
   - It is not necessary, and not recommended unless you know what you're doing, to enable MQTT downlink
