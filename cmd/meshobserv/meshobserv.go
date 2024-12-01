@@ -237,7 +237,7 @@ func main() {
 			"msh/+/+/+/+/2/map/",
 			"msh/+/+/+/+/2/e/+/+",
 		},
-		TopicRegex: regexp.MustCompile(`/2/e/[^/]+/![0-9a-f]+$|/2/map/$`),
+		TopicRegex: regexp.MustCompile(`^msh(?:/[^/]+)+/2/(?:e/[^/]+/![0-9a-f]+|map/)$`),
 		Accept: func(from uint32) bool {
 			_, found := blocked[from]
 			return !found
