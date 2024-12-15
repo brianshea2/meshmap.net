@@ -25,6 +25,8 @@ const (
 	NeighborExpiration = 7200  // 2 hr
 	MetricsExpiration  = 7200  // 2 hr
 	PruneWriteInterval = time.Minute
+	RateLimitCount     = 4000
+	RateLimitDuration  = time.Hour
 )
 
 var (
@@ -225,6 +227,15 @@ func main() {
 			log.Fatalf("[error] read blocklist: %v", err)
 		}
 	}
+	// maintain per-node message counters for rate limiting
+	var counters sync.Map // as map[uint32]*uint32
+	go func() {
+		for {
+			time.Sleep(RateLimitDuration)
+			log.Print("[info] clearing message counters")
+			counters.Clear()
+		}
+	}()
 	// connect to MQTT
 	client := &meshtastic.MQTTClient{
 		Topics: []string{
@@ -239,8 +250,18 @@ func main() {
 		},
 		TopicRegex: regexp.MustCompile(`^msh(?:/[^/]+)+/2/(?:e/[^/]+/![0-9a-f]+|map/)$`),
 		Accept: func(from uint32) bool {
-			_, found := blocked[from]
-			return !found
+			if _, found := blocked[from]; found {
+				return false
+			}
+			v, _ := counters.LoadOrStore(from, new(uint32))
+			count := atomic.AddUint32(v.(*uint32), 1)
+			if count >= RateLimitCount {
+				if count%100 == 0 {
+					log.Printf("[info] node %v rate limited (%v messages)", from, count)
+				}
+				return false
+			}
+			return true
 		},
 		BlockCipher:    meshtastic.NewBlockCipher(meshtastic.DefaultKey),
 		MessageHandler: handleMessage,
