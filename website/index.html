@@ -4,14 +4,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="description" content="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">
 <title>MeshMap - Meshtastic Node Map</title>
+<link rel="preload" href="/nodes.json" as="fetch" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900">
+<link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="manifest" href="/site.webmanifest">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin="">
-<link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css" crossorigin="">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" crossorigin="">
 <style>
   html, body, #map {
     height: 100%;
@@ -36,7 +37,7 @@
     color: #333;
     display: flex;
     gap: 2ch;
-    font-family: "Roboto", sans-serif;
+    font-family: "Inter", sans-serif;
     padding: 0.75em;
     position: absolute;
     top: 0;
@@ -72,7 +73,7 @@
     top: 4em;
   }
   .leaflet-tooltip, .leaflet-popup-content {
-    font-family: "Roboto", sans-serif;
+    font-family: "Inter", sans-serif;
     font-size: 12px;
   }
   .leaflet-popup-content .title {
@@ -108,10 +109,10 @@
   <div><a href="https://meshtastic.org/">Meshtastic</a></div>
 </div>
 <div id="map"></div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-easybutton@2.4.0/src/easy-button.js"></script>
+<script src="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
   const ipinfoToken = 'aeb066758afd49'
   const updateInterval = 65000
