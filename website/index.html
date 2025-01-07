@@ -317,15 +317,19 @@
     }
   })
   // fetches node data, updates map, repeats
-  const drawMap = async shouldDraw => {
-    if (shouldDraw) {
-      try {
-        await fetch('/nodes.json').then(r => r.json()).then(updateNodes)
-      } catch (e) {
-        console.error('Failed to update nodes:', e)
-      }
+  const drawMap = async () => {
+    try {
+      await fetch('/nodes.json').then(r => r.json()).then(updateNodes)
+    } catch (e) {
+      console.error('Failed to update nodes:', e)
     }
-    setTimeout(() => drawMap(document.visibilityState === 'visible'), updateInterval)
+    setTimeout(() => {
+      if (document.hidden) {
+        document.addEventListener('visibilitychange', drawMap, {once: true})
+      } else {
+        drawMap()
+      }
+    }, updateInterval)
   }
   // centers map to node and opens popup
   const showNode = nodeNum => {
@@ -351,7 +355,7 @@
     }
   })
   // let's go!!!
-  drawMap(true).then(() => {
+  drawMap().then(() => {
     if (window.location.hash && !showNode(window.location.hash.slice(1))) {
       history.replaceState(null, '', window.location.pathname)
     }
