@@ -216,7 +216,7 @@
       fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
       latitude, longitude, altitude, precision,
       batteryLevel, voltage, chUtil, airUtilTx, uptime,
-      temperature, relativeHumidity, barometricPressure,
+      temperature, relativeHumidity, barometricPressure, lux, windDirection, windSpeed, windGust, radiation, rainfall,
       neighbors, seenBy
     } = node
     const id = `!${Number(nodeNum).toString(16)}`
@@ -250,9 +250,19 @@
                              `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
       ${relativeHumidity   ? `<tr><th>Relative Humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>`        : ''}
       ${barometricPressure ? `<tr><th>Barometric Pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
+      ${lux                ? `<tr><th>Lux</th><td>${Math.round(lux)} lx</td></tr>`                                 : ''}
+      ${windDirection || windSpeed ? `<tr><th>Wind</th><td>` +
+                              (windDirection ? `${windDirection}&#176;` : '') +
+                              (windDirection && windSpeed ? ' @ ' : '') +
+                              (windSpeed ? `${(windSpeed * 3.6).toFixed(1)}` : '') +
+                              (windSpeed && windGust ? ` G ${(windGust * 3.6).toFixed(1)}` : '') +
+                              (windSpeed ? ' km/h' : '') +
+                              `</td></tr>`                                                                         : ''}
+      ${radiation          ? `<tr><th>Radiation</th><td>${radiation.toFixed(2)} µR/h</td></tr>`                    : ''}
+      ${rainfall           ? `<tr><th>Rainfall</th><td>${rainfall.toFixed(1)} mm/24h</td></tr>`                    : ''}
       ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
-      ${precision && precisionMargins[precision-1] ? "<tr><th>Location precision</th><td>&#177;" +
-                             `${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>`       : ''}
+      ${precision && precisionMargins[precision-1] ? `<tr><th>Location precision</th><td>` +
+                             `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
       </tbody></table>
       <table><thead>
       <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
