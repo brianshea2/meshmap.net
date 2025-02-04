@@ -107,15 +107,32 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			temperature := envMetrics.GetTemperature()
 			relativeHumidity := envMetrics.GetRelativeHumidity()
 			barometricPressure := envMetrics.GetBarometricPressure()
+			lux := envMetrics.GetLux()
+			windDirection := envMetrics.GetWindDirection()
+			windSpeed := envMetrics.GetWindSpeed()
+			windGust := envMetrics.GetWindGust()
+			radiation := envMetrics.GetRadiation()
+			rainfall := envMetrics.GetRainfall_24H()
 			log.Printf(
-				"[msg] %v (%v) %s: EnvironmentMetrics{temperature: %vC; humidity: %v%%; pressure: %vhPA}",
-				from, topic, portNum, temperature, relativeHumidity, barometricPressure,
+				"[msg] %v (%v) %s: EnvironmentMetrics{temp: %v; hum: %v; pres: %v; lux: %v; wind: %v @ %v G %v; rad: %v; rain: %v}",
+				from, topic, portNum, temperature, relativeHumidity, barometricPressure, lux,
+				windDirection, windSpeed, windGust, radiation, rainfall,
 			)
 			NodesMutex.Lock()
 			if Nodes[from] == nil {
 				Nodes[from] = meshtastic.NewNode(topic)
 			}
-			Nodes[from].UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure)
+			Nodes[from].UpdateEnvironmentMetrics(
+				temperature,
+				relativeHumidity,
+				barometricPressure,
+				lux,
+				windDirection,
+				windSpeed,
+				windGust,
+				radiation,
+				rainfall,
+			)
 			NodesMutex.Unlock()
 		}
 	case generated.PortNum_NEIGHBORINFO_APP:

@@ -54,6 +54,12 @@ type Node struct {
 	Temperature            float32 `json:"temperature,omitempty"`
 	RelativeHumidity       float32 `json:"relativeHumidity,omitempty"`
 	BarometricPressure     float32 `json:"barometricPressure,omitempty"`
+	Lux                    float32 `json:"lux,omitempty"`
+	WindDirection          uint32  `json:"windDirection,omitempty"`
+	WindSpeed              float32 `json:"windSpeed,omitempty"`
+	WindGust               float32 `json:"windGust,omitempty"`
+	Radiation              float32 `json:"radiation,omitempty"`
+	Rainfall               float32 `json:"rainfall,omitempty"`
 	LastEnvironmentMetrics int64   `json:"lastEnvironmentMetrics,omitempty"`
 	// NeighborInfo
 	Neighbors map[uint32]*NeighborInfo `json:"neighbors,omitempty"`
@@ -80,6 +86,12 @@ func (node *Node) ClearEnvironmentMetrics() {
 	node.Temperature = 0
 	node.RelativeHumidity = 0
 	node.BarometricPressure = 0
+	node.Lux = 0
+	node.WindDirection = 0
+	node.WindSpeed = 0
+	node.WindGust = 0
+	node.Radiation = 0
+	node.Rainfall = 0
 	node.LastEnvironmentMetrics = 0
 }
 
@@ -163,10 +175,16 @@ func (node *Node) UpdateDeviceMetrics(batteryLevel uint32, voltage, chUtil, airU
 	node.LastDeviceMetrics = time.Now().Unix()
 }
 
-func (node *Node) UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure float32) {
+func (node *Node) UpdateEnvironmentMetrics(temperature, relativeHumidity, barometricPressure, lux float32, windDirection uint32, windSpeed, windGust, radiation, rainfall float32) {
 	node.Temperature = cleanFloat(temperature)
 	node.RelativeHumidity = cleanFloat(relativeHumidity)
 	node.BarometricPressure = cleanFloat(barometricPressure)
+	node.Lux = cleanFloat(lux)
+	node.WindDirection = windDirection
+	node.WindSpeed = cleanFloat(windSpeed)
+	node.WindGust = cleanFloat(windGust)
+	node.Radiation = cleanFloat(radiation)
+	node.Rainfall = cleanFloat(rainfall)
 	node.LastEnvironmentMetrics = time.Now().Unix()
 }
 
