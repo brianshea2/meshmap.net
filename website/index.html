@@ -216,7 +216,8 @@
       fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
       latitude, longitude, altitude, precision,
       batteryLevel, voltage, chUtil, airUtilTx, uptime,
-      temperature, relativeHumidity, barometricPressure, lux, windDirection, windSpeed, windGust, radiation, rainfall,
+      temperature, relativeHumidity, barometricPressure, lux,
+      windDirection, windSpeed, windGust, radiation, rainfall1, rainfall24,
       neighbors, seenBy
     } = node
     const id = `!${Number(nodeNum).toString(16)}`
@@ -259,7 +260,11 @@
                               (windSpeed ? ' km/h' : '') +
                               `</td></tr>`                                                                         : ''}
       ${radiation          ? `<tr><th>Radiation</th><td>${radiation.toFixed(2)} µR/h</td></tr>`                    : ''}
-      ${rainfall           ? `<tr><th>Rainfall</th><td>${rainfall.toFixed(1)} mm/24h</td></tr>`                    : ''}
+      ${rainfall1 || rainfall24 ? `<tr><th>Rainfall</th><td>` +
+                              (rainfall1 ? `${rainfall1.toFixed(2)} mm/h` : '') +
+                              (rainfall1 && rainfall24 ? ', ' : '') +
+                              (rainfall24 ? `${rainfall24.toFixed(2)} mm/24h` : '') +
+                              `</td></tr>`                                                                         : ''}
       ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
       ${precision && precisionMargins[precision-1] ? `<tr><th>Location precision</th><td>` +
                              `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}

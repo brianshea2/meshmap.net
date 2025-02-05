@@ -112,11 +112,12 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			windSpeed := envMetrics.GetWindSpeed()
 			windGust := envMetrics.GetWindGust()
 			radiation := envMetrics.GetRadiation()
-			rainfall := envMetrics.GetRainfall_24H()
+			rainfall1 := envMetrics.GetRainfall_1H()
+			rainfall24 := envMetrics.GetRainfall_24H()
 			log.Printf(
-				"[msg] %v (%v) %s: EnvironmentMetrics{temp: %v; hum: %v; pres: %v; lux: %v; wind: %v @ %v G %v; rad: %v; rain: %v}",
+				"[msg] %v (%v) %s: EnvironmentMetrics{temp: %v; hum: %v; pres: %v; lux: %v; wind: %v @ %v G %v; rad: %v; rain: %v %v}",
 				from, topic, portNum, temperature, relativeHumidity, barometricPressure, lux,
-				windDirection, windSpeed, windGust, radiation, rainfall,
+				windDirection, windSpeed, windGust, radiation, rainfall1, rainfall24,
 			)
 			NodesMutex.Lock()
 			if Nodes[from] == nil {
@@ -131,7 +132,8 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 				windSpeed,
 				windGust,
 				radiation,
-				rainfall,
+				rainfall1,
+				rainfall24,
 			)
 			NodesMutex.Unlock()
 		}
