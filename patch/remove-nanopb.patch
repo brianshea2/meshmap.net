@@ -1,9 +1,9 @@
 --- a/protobufs/meshtastic/deviceonly.proto
 +++ b/protobufs/meshtastic/deviceonly.proto
-@@ -7,14 +7,12 @@ import "meshtastic/localonly.proto";
- import "meshtastic/mesh.proto";
+@@ -7,14 +7,12 @@ import "meshtastic/mesh.proto";
  import "meshtastic/telemetry.proto";
  import "meshtastic/config.proto";
+ import "meshtastic/localonly.proto";
 -import "nanopb.proto";
  
  option csharp_namespace = "Meshtastic.Protobufs";
@@ -15,12 +15,12 @@
  
  
  /*
-@@ -235,7 +233,7 @@ message DeviceState {
+@@ -235,7 +233,7 @@ message NodeDatabase {
    /*
     * New lite version of NodeDB to decrease memory footprint
     */
--  repeated NodeInfoLite node_db_lite = 14 [(nanopb).callback_datatype = "std::vector<meshtastic_NodeInfoLite>"];
-+  repeated NodeInfoLite node_db_lite = 14;
+-  repeated NodeInfoLite nodes = 2 [(nanopb).callback_datatype = "std::vector<meshtastic_NodeInfoLite>"];
++  repeated NodeInfoLite nodes = 2;
  }
  
  /*
