@@ -161,12 +161,13 @@
   const map = L.map('map', {
     center: window.localStorage.getItem('center')?.split(',') ?? [25, 0],
     zoom: window.localStorage.getItem('zoom') ?? 2,
+    attributionControl: false,
     zoomControl: false,
     worldCopyJump: true,
   })
   // add tiles
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: 'Map data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(map)
   // add marker group
@@ -205,6 +206,13 @@
       },
     ],
   }).addTo(map)
+  // add attribution control
+  const attribution = L.control.attribution({position: 'bottomright', prefix: false}).addTo(map)
+  // updates attribution with given count of nodes
+  const updateNodeCount = count => attribution.setPrefix(`
+    ${count.toLocaleString()} nodes from
+    <a href="https://meshtastic.org/docs/software/integrations/mqtt/#public-mqtt-server">Meshtastic MQTT</a>
+  `)
   // track and store map position
   map.on('moveend', () => {
     const center = map.getCenter()
@@ -348,6 +356,7 @@
   const drawMap = async () => {
     try {
       await fetch('/nodes.json').then(r => r.json()).then(updateNodes)
+      updateNodeCount(Object.keys(markersByNode).length)
     } catch (e) {
       console.error('Failed to update nodes:', e)
     }
