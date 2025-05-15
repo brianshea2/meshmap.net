@@ -38,6 +38,8 @@
     display: flex;
     gap: 2ch;
     font-family: "Inter", sans-serif;
+    font-size: 16px;
+    line-height: 1.2;
     padding: 0.75em;
     position: absolute;
     top: 0;
@@ -51,6 +53,10 @@
   }
   #header a:hover {
     opacity: 0.7;
+  }
+  #header a img {
+    display: block;
+    height: 1.2em;
   }
   #header div:nth-child(2) {
     flex-grow: 1;
@@ -108,7 +114,7 @@
     ><i class="fa fa-moon-o fa-lg dark-hidden"></i><i class="fa fa-sun-o fa-lg dark-only"></i></a>
   </div>
   <div><a href="https://github.com/brianshea2/meshmap.net" title="GitHub"><i class="fa fa-github fa-lg"></i></a></div>
-  <div><a href="https://meshtastic.org/">Meshtastic</a></div>
+  <div><a href="https://meshtastic.org/" title="Powered by Meshtastic"><img alt="Meshtastic" src="/m-pwrd_bw_noborder-min.svg"></a></div>
 </div>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
