@@ -2,7 +2,7 @@
 A nearly live map of [Meshtastic](https://meshtastic.org/) nodes seen by the official Meshtastic MQTT server
 
 ## Features
-- Shows all position-reporting nodes heard by Meshtastic's [official MQTT server](https://meshtastic.org/docs/configuration/module/mqtt/#connect-to-the-default-public-server)
+- Shows all position-reporting nodes heard by Meshtastic's [Public MQTT Server](https://meshtastic.org/docs/software/integrations/mqtt/#public-mqtt-server)
   - Includes nodes self-reporting to MQTT or heard by another node reporting to MQTT
 - Node data is updated every minute
 - Nodes are removed from the map if their position is not updated after 24 hours
@@ -11,24 +11,17 @@ A nearly live map of [Meshtastic](https://meshtastic.org/) nodes seen by the off
 ## FAQs
 
 ### How do I get my node on the map?
-These are general requirements. Refer to the [official docs](https://meshtastic.org/docs/configuration/) or reach out to the fantastic Meshtastic community
-(such as at [r/meshtastic](https://www.reddit.com/r/meshtastic/)) for additional support.
+These are general requirements. Refer to the [official docs](https://meshtastic.org/docs/) or reach out to the fantastic [Meshtastic](https://meshtastic.org/) community for additional support.
 - First, make sure you are running a [recent firmware](https://meshtastic.org/downloads/) version
 - Use the default primary channel and encryption key
 - Enable "OK to MQTT" in LoRa configuration (signaling you want your messages uplinked via MQTT)
 - Enable position reports from your node
   - This may mean enabling your node's built-in GPS, sharing your phone's location via the app, or setting a fixed position
   - Ensure "Position enabled" is enabled on the primary channel
-  - Precise locations are filtered (see important update below -- the default precision will work)
+  - Ensure "Precise location" is disabled on the primary channel and the configured precision is no more than 364 m / 1194 ft
+    - See [Restrictions on the Public MQTT Server](https://meshtastic.org/docs/software/integrations/mqtt/#restrictions-on-the-public-mqtt-server) for details
 
 If your node can be heard by another node already reporting to MQTT, that's it!
-
-#### Important update as of August, 2024
-Meshtastic has [made a change to their MQTT server](https://meshtastic.org/blog/recent-public-mqtt-broker-changes/):
-
-> Only position packets with imprecise location information [10-16 bits] will be passed to the topic, ensuring that sensitive data is not exposed.
-
-The most accurate resolution that conforms to this specification is 364 meters/1194 feet.
 
 #### To enable MQTT reporting
 - Enable the MQTT module, using all default settings, possibly with a custom root topic
@@ -36,6 +29,8 @@ The most accurate resolution that conforms to this specification is 364 meters/1
 - Configure your node to connect to wifi or otherwise connect to the internet
 - Enable MQTT uplink on your primary channel
   - It is not necessary, and not recommended unless you know what you're doing, to enable MQTT downlink
+
+Note, the "Map reporting" option in the MQTT configuration reports [additional data](https://meshtastic.org/docs/configuration/module/mqtt/#map-reporting-enabled) about the local node only.
 
 ### Does the map allow manual/self-reported nodes (not over MQTT)?
 No, and that's a feature. The goal of this map is to provide a reasonably up-to-date, reliable data source for node locations.
