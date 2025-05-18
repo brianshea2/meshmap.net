@@ -2,6 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#fff">
 <meta name="description" content="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">
 <title>MeshMap - Meshtastic Node Map</title>
 <link rel="preload" href="/nodes.json" as="fetch" crossorigin>
@@ -36,11 +37,13 @@
     box-shadow: 0 0 4px 0 rgb(0 0 0 / 40%);
     color: #333;
     display: flex;
+    align-items: center;
     gap: 2ch;
     font-family: "Inter", sans-serif;
     font-size: 16px;
     line-height: 1.2;
-    padding: 0.75em;
+    height: 40px;
+    padding: 0 17px 0 10px;
     position: absolute;
     top: 0;
     left: 0;
@@ -56,7 +59,6 @@
   }
   #header a img {
     display: block;
-    height: 1.2em;
   }
   #header div:nth-child(2) {
     flex-grow: 1;
@@ -76,7 +78,7 @@
     word-break: break-all;
   }
   .leaflet-top {
-    top: 4em;
+    top: 40px;
   }
   .leaflet-tooltip, .leaflet-popup-content {
     font-family: "Inter", sans-serif;
@@ -90,6 +92,9 @@
   .leaflet-popup-content table {
     margin-top: 1em;
   }
+  .leaflet-right .leaflet-control-attribution {
+    text-align: right;
+  }
   body.dark .leaflet-shadow-pane {
     display: none;
   }
@@ -102,19 +107,39 @@
     }
   }
 </style>
+<script>
+  const toggleDark = () => {
+    if (document.body.classList.toggle('dark')) {
+      document.querySelector('meta[name="theme-color"]').content = '#000'
+      window.localStorage.setItem('theme', 'dark')
+      return true
+    }
+    document.querySelector('meta[name="theme-color"]').content = '#fff'
+    window.localStorage.removeItem('theme')
+    return false
+  }
+  if (window.localStorage.getItem('theme') === 'dark') {
+    document.addEventListener('DOMContentLoaded', () => toggleDark())
+  }
+</script>
 <div id="header">
   <div>
     <a href="https://meshmap.net/" title="A nearly live map of Meshtastic nodes seen by the official Meshtastic MQTT server">MeshMap</a>
   </div>
   <div>
-    <a
-      href="#"
-      onclick="window.localStorage.setItem('theme', document.body.classList.toggle('dark') ? 'dark' : 'light');return false"
-      title="Toggle dark mode"
-    ><i class="fa fa-moon-o fa-lg dark-hidden"></i><i class="fa fa-sun-o fa-lg dark-only"></i></a>
+    <a href="#" onclick="toggleDark();return false;" title="Toggle dark mode">
+      <i class="fa fa-moon-o fa-lg dark-hidden"></i>
+      <i class="fa fa-sun-o fa-lg dark-only"></i>
+    </a>
   </div>
-  <div><a href="https://github.com/brianshea2/meshmap.net" title="GitHub"><i class="fa fa-github fa-lg"></i></a></div>
-  <div><a href="https://meshtastic.org/" title="Powered by Meshtastic"><img alt="Meshtastic" src="/m-pwrd_bw_noborder-min.svg"></a></div>
+  <div>
+    <a href="https://github.com/brianshea2/meshmap.net" title="GitHub"><i class="fa fa-github fa-lg"></i></a>
+  </div>
+  <div>
+    <a href="https://meshtastic.org/" title="Powered by Meshtastic">
+      <img alt="Meshtastic" src="/m-pwrd_bw_noborder-min.svg" style="width:1.2em;height:1.2em;">
+    </a>
+  </div>
 </div>
 <div id="map"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -153,10 +178,6 @@
     return s
   }
   const since = t => `${duration(Date.now() / 1000 - t)} ago`
-  // set theme
-  if (window.localStorage.getItem('theme') === 'dark') {
-    document.body.classList.add('dark')
-  }
   // init map
   const map = L.map('map', {
     center: window.localStorage.getItem('center')?.split(',') ?? [25, 0],
@@ -167,7 +188,7 @@
   })
   // add tiles
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'Map data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: 'Map tiles from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 19,
   }).addTo(map)
   // add marker group
@@ -222,7 +243,7 @@
     window.localStorage.setItem('zoom', map.getZoom())
   })
   // generates html for a node link
-  const nodeLink = (num, label) => `<a href="#${num}" onclick="showNode(${num});return false">${html(label)}</a>`
+  const nodeLink = (num, label) => `<a href="#${num}" onclick="showNode(${num});return false;">${html(label)}</a>`
   // updates node map markers
   const updateNodes = data => Object.entries(data).forEach(([nodeNum, node]) => {
     const {
