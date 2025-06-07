@@ -25,8 +25,8 @@ const (
 	NeighborExpiration = 7200  // 2 hr
 	MetricsExpiration  = 7200  // 2 hr
 	PruneWriteInterval = time.Minute
-	RateLimitCount     = 4000
-	RateLimitDuration  = time.Hour
+	RateLimitCount     = 300
+	RateLimitDuration  = time.Minute
 )
 
 var (
@@ -39,7 +39,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 	Receiving.Store(true)
 	switch portNum {
 	case generated.PortNum_TEXT_MESSAGE_APP:
-		log.Printf("[msg] (%v) <%v> 💬 %s", topic, from, payload)
+		log.Printf("[msg] (%v) <%v> TXT: %s", topic, from, payload)
 	case generated.PortNum_POSITION_APP:
 		var position generated.Position
 		if err := proto.Unmarshal(payload, &position); err != nil {
@@ -50,7 +50,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		longitude := position.GetLongitudeI()
 		altitude := position.GetAltitude()
 		precision := position.GetPrecisionBits()
-		log.Printf("[msg] (%v) <%v> 🚩 (%v, %v, %v) %v", topic, from, latitude, longitude, altitude, precision)
+		log.Printf("[msg] (%v) <%v> POS: (%v, %v, %v)/%v", topic, from, latitude, longitude, altitude, precision)
 		if latitude == 0 && longitude == 0 {
 			return
 		}
@@ -71,7 +71,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		shortName := user.GetShortName()
 		hwModel := user.GetHwModel().String()
 		role := user.GetRole().String()
-		log.Printf("[msg] (%v) <%v> 🙋 %v (%v) %v %v", topic, from, longName, shortName, role, hwModel)
+		log.Printf("[msg] (%v) <%v> NODE: %v (%v) %v %v", topic, from, longName, shortName, role, hwModel)
 		if len(longName) == 0 {
 			return
 		}
@@ -93,7 +93,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			chUtil := deviceMetrics.GetChannelUtilization()
 			airUtilTx := deviceMetrics.GetAirUtilTx()
 			uptime := deviceMetrics.GetUptimeSeconds()
-			log.Printf("[msg] (%v) <%v> 🔋 %v%% (%vV) ⏻ %vs 🔉 %v%% 🎤 %v%%", topic, from, batteryLevel, voltage, uptime, chUtil, airUtilTx)
+			log.Printf("[msg] (%v) <%v> PWR: %v%% (%vV) %vs UTIL: %v%%, %v%%", topic, from, batteryLevel, voltage, uptime, chUtil, airUtilTx)
 			NodesMutex.Lock()
 			if Nodes[from] == nil {
 				Nodes[from] = meshtastic.NewNode(topic)
@@ -112,7 +112,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 			rainfall1 := envMetrics.GetRainfall_1H()
 			rainfall24 := envMetrics.GetRainfall_24H()
 			log.Printf(
-				"[msg] (%v) <%v> ⛅ %v℃ %v%% %vhPa 🍃 %v @ %v G %v ☔ %v %v 💡 %v ☢ %v", topic, from,
+				"[msg] (%v) <%v> ENV: %v℃ %v%% %vhPa WIND: %v @ %v G %v RAIN: %v, %v LUX: %v RAD: %v", topic, from,
 				temperature, relativeHumidity, barometricPressure, windDirection, windSpeed, windGust, rainfall1, rainfall24, lux, radiation,
 			)
 			NodesMutex.Lock()
@@ -141,7 +141,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		}
 		nodeNum := neighborInfo.GetNodeId()
 		neighbors := neighborInfo.GetNeighbors()
-		log.Printf("[msg] (%v) <%v> 👥 %v neighbors of %v", topic, from, len(neighbors), nodeNum)
+		log.Printf("[msg] (%v) <%v> NGHBR: %v neighbors of %v", topic, from, len(neighbors), nodeNum)
 		if nodeNum != from {
 			return
 		}
@@ -180,7 +180,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		altitude := mapReport.GetAltitude()
 		precision := mapReport.GetPositionPrecision()
 		log.Printf(
-			"[msg] (%v) <%v> 🙋 %v (%v) %v %v %v %v %v %v %v 🚩 (%v, %v, %v) %v", topic, from,
+			"[msg] (%v) <%v> MAP: %v (%v) %v %v %v %v %v %v %v POS: (%v, %v, %v)/%v", topic, from,
 			longName, shortName, role, hwModel,
 			fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
 			latitude, longitude, altitude, precision,
@@ -201,7 +201,7 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 		Nodes[from].UpdateSeenBy(topic)
 		NodesMutex.Unlock()
 	default:
-		log.Printf("[msg] (%v) <%v> ⍰ %s", topic, from, portNum)
+		log.Printf("[msg] (%v) <%v> %s", topic, from, portNum)
 	}
 }
 
@@ -247,7 +247,6 @@ func main() {
 	go func() {
 		for {
 			time.Sleep(RateLimitDuration)
-			log.Print("[info] clearing message counters")
 			counters.Clear()
 		}
 	}()
