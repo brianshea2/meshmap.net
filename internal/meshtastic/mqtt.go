@@ -99,6 +99,11 @@ func (c *MQTTClient) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 		log.Printf("[warn] skipping MeshPacket from unknown on %v", topic)
 		return
 	}
+	// ignore PKI direct messages
+	if packet.GetPkiEncrypted() {
+		log.Printf("[info] skipping PKI encrypted MeshPacket from %v on %v", from, topic)
+		return
+	}
 	// check sender
 	if c.Accept != nil && !c.Accept(from) {
 		return
