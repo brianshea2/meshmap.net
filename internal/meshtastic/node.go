@@ -2,6 +2,7 @@ package meshtastic
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
@@ -17,7 +18,8 @@ func cleanFloat(f float32) float32 {
 		// IEEE 754 says that only NaNs satisfy f != f
 		return 0
 	}
-	return f
+	// limit floats to 3 decimal places
+	return float32(math.Round(float64(f*1000)) / 1000)
 }
 
 type NeighborInfo struct {
