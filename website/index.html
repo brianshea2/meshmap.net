@@ -256,122 +256,122 @@
     let reactivate = () => {}
     const relationsByNode = {}
     Object.entries(data).forEach(([nodeNum, node]) => {
-    const {
-      longName, shortName, hwModel, role,
-      fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
-      latitude, longitude, altitude, precision,
-      batteryLevel, voltage, chUtil, airUtilTx, uptime,
-      temperature, relativeHumidity, barometricPressure, lux,
-      windDirection, windSpeed, windGust, radiation, rainfall1, rainfall24,
-      neighbors, seenBy
-    } = node
-    const id = `!${Number(nodeNum).toString(16)}`
-    const position = L.latLng([latitude, longitude].map(x => x / 10000000))
-    const seenByNums = new Set(
-      Object.keys(seenBy)
-        .map(topic => topic.match(/\/!([0-9a-f]+)$/))
-        .filter(match => match)
-        .map(match => parseInt(match[1], 16))
-    )
-    relationsByNode[nodeNum] ??= {}
-    seenByNums.forEach(seenByNum => {
-      relationsByNode[seenByNum] ??= {}
-      const relationObj = relationsByNode[nodeNum][seenByNum] ?? relationsByNode[seenByNum][nodeNum] ?? {}
-      relationsByNode[nodeNum][seenByNum] = relationObj
-      relationsByNode[seenByNum][nodeNum] = relationObj
-      relationObj.mqtt = true
-    })
-    if (neighbors) {
-      Object.keys(neighbors).forEach(neighborNum => {
-        relationsByNode[neighborNum] ??= {}
-        const relationObj = relationsByNode[nodeNum][neighborNum] ?? relationsByNode[neighborNum][nodeNum] ?? {}
-        relationsByNode[nodeNum][neighborNum] = relationObj
-        relationsByNode[neighborNum][nodeNum] = relationObj
-        relationObj.neighbor = true
+      const {
+        longName, shortName, hwModel, role,
+        fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
+        latitude, longitude, altitude, precision,
+        batteryLevel, voltage, chUtil, airUtilTx, uptime,
+        temperature, relativeHumidity, barometricPressure, lux,
+        windDirection, windSpeed, windGust, radiation, rainfall1, rainfall24,
+        neighbors, seenBy
+      } = node
+      const id = `!${Number(nodeNum).toString(16)}`
+      const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+      const seenByNums = new Set(
+        Object.keys(seenBy)
+          .map(topic => topic.match(/\/!([0-9a-f]+)$/))
+          .filter(match => match)
+          .map(match => parseInt(match[1], 16))
+      )
+      relationsByNode[nodeNum] ??= {}
+      seenByNums.forEach(seenByNum => {
+        relationsByNode[seenByNum] ??= {}
+        const relationObj = relationsByNode[nodeNum][seenByNum] ?? relationsByNode[seenByNum][nodeNum] ?? {}
+        relationsByNode[nodeNum][seenByNum] = relationObj
+        relationsByNode[seenByNum][nodeNum] = relationObj
+        relationObj.mqtt = true
       })
-    }
-    const drawRelationLines = () => {
-      relationsLayer.clearLayers()
-      Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
-        if (data[relatedNum] === undefined) {
-          return
-        }
-        const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
-        const relationContent = `
-          <table><tbody>
-          <tr><th>Relation type</th><td>${[relationObj.neighbor && 'Neighbor', relationObj.mqtt && 'MQTT uplink'].filter(v => v).join(', ')}</td></tr>
-          <tr><th>Distance</th><td>${Math.round(map.distance(position, relatedPosition)).toLocaleString()} m</td></tr>
-          ${neighbors?.[relatedNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[relatedNum].snr} dB</td></tr>` : ''}
-          </tbody></table>
-        `
-        L.polyline([position, relatedPosition])
-          .bindTooltip(relationContent, {opacity: 0.95, sticky: true})
-          .on('click', () => showNode(relatedNum))
-          .addTo(relationsLayer)
-      })
-    }
-    const lastSeen = Math.max(...Object.values(seenBy))
-    const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 129600
-    const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
-    const popupContent = `
-      <div class="title">${html(longName)} (${html(shortName)})</div>
-      <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
-      <table><tbody>
-      ${fwVersion          ? `<tr><th>Firmware</th><td>${html(fwVersion)}</td></tr>`                               : ''}
-      ${region             ? `<tr><th>Region</th><td>${html(region)}</td></tr>`                                    : ''}
-      ${modemPreset        ? `<tr><th>Modem preset</th><td>${html(modemPreset)}</td></tr>`                         : ''}
-      ${hasDefaultCh       ? `<tr><th>Has default channel</th><td>True</td></tr>`                                  : ''}
-      ${onlineLocalNodes   ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>`                    : ''}
-      ${batteryLevel       ? `<tr><th>Power</th><td>${batteryLevel > 100 ? 'Plugged in' : `${batteryLevel}%`}` +
-                             `${voltage ? ` (${voltage.toFixed(2)}V)` : ''}</td></tr>`                             : ''}
-      ${chUtil             ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>`                              : ''}
-      ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
-      ${uptime             ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>`                                : ''}
-      ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
-                             `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
-      ${relativeHumidity   ? `<tr><th>Relative Humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>`        : ''}
-      ${barometricPressure ? `<tr><th>Barometric Pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
-      ${lux                ? `<tr><th>Lux</th><td>${Math.round(lux)} lx</td></tr>`                                 : ''}
-      ${windDirection || windSpeed ? `<tr><th>Wind</th><td>` +
-                              (windDirection ? `${windDirection}&#176;` : '') +
-                              (windDirection && windSpeed ? ' @ ' : '') +
-                              (windSpeed ? `${(windSpeed * 3.6).toFixed(1)}` : '') +
-                              (windSpeed && windGust ? ` G ${(windGust * 3.6).toFixed(1)}` : '') +
-                              (windSpeed ? ' km/h' : '') +
-                              `</td></tr>`                                                                         : ''}
-      ${radiation          ? `<tr><th>Radiation</th><td>${radiation.toFixed(2)} µR/h</td></tr>`                    : ''}
-      ${rainfall1 || rainfall24 ? `<tr><th>Rainfall</th><td>` +
-                              (rainfall1 ? `${rainfall1.toFixed(2)} mm/h` : '') +
-                              (rainfall1 && rainfall24 ? ', ' : '') +
-                              (rainfall24 ? `${rainfall24.toFixed(2)} mm/24h` : '') +
-                              `</td></tr>`                                                                         : ''}
-      ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
-      ${precision && precisionMargins[precision-1] ? `<tr><th>Location precision</th><td>` +
-                             `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
-      </tbody></table>
-      <table><thead>
-      <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
-      </thead><tbody>
-      ${Array.from(
-        new Map(
-          Object.entries(seenBy)
-            .map(([topic, seen]) => (match => ({seen, via: match[3] ?? id, root: match[1], chan: match[2]}))(
-              topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/s)
-            ))
-            .sort((a, b) => a.seen - b.seen)
-            .map(v => [v.via, v])
-        ).values(),
-        ({seen, via, root, chan}) => `
-          <tr>
-          <td>${since(seen)}</td>
-          <td>${via !== id ? (num => data[num] ? nodeLink(num, via) : via)(parseInt(via.slice(1), 16)) : 'self'}</td>
-          <td class="break">${html(root)}</td>
-          <td class="break">${html(chan ?? 'n/a (MapReport)')}</td>
-          </tr>
-        `
-      ).reverse().join('')}
-      </tbody></table>
-    `
+      if (neighbors) {
+        Object.keys(neighbors).forEach(neighborNum => {
+          relationsByNode[neighborNum] ??= {}
+          const relationObj = relationsByNode[nodeNum][neighborNum] ?? relationsByNode[neighborNum][nodeNum] ?? {}
+          relationsByNode[nodeNum][neighborNum] = relationObj
+          relationsByNode[neighborNum][nodeNum] = relationObj
+          relationObj.neighbor = true
+        })
+      }
+      const drawRelationLines = () => {
+        relationsLayer.clearLayers()
+        Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
+          if (data[relatedNum] === undefined) {
+            return
+          }
+          const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
+          const relationContent = `
+            <table><tbody>
+            <tr><th>Relation type</th><td>${[relationObj.neighbor && 'Neighbor', relationObj.mqtt && 'MQTT uplink'].filter(v => v).join(', ')}</td></tr>
+            <tr><th>Distance</th><td>${Math.round(map.distance(position, relatedPosition)).toLocaleString()} m</td></tr>
+            ${neighbors?.[relatedNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[relatedNum].snr} dB</td></tr>` : ''}
+            </tbody></table>
+          `
+          L.polyline([position, relatedPosition])
+            .bindTooltip(relationContent, {opacity: 0.95, sticky: true})
+            .on('click', () => showNode(relatedNum))
+            .addTo(relationsLayer)
+        })
+      }
+      const lastSeen = Math.max(...Object.values(seenBy))
+      const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 129600
+      const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
+      const popupContent = `
+        <div class="title">${html(longName)} (${html(shortName)})</div>
+        <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
+        <table><tbody>
+        ${fwVersion          ? `<tr><th>Firmware</th><td>${html(fwVersion)}</td></tr>`                               : ''}
+        ${region             ? `<tr><th>Region</th><td>${html(region)}</td></tr>`                                    : ''}
+        ${modemPreset        ? `<tr><th>Modem preset</th><td>${html(modemPreset)}</td></tr>`                         : ''}
+        ${hasDefaultCh       ? `<tr><th>Has default channel</th><td>True</td></tr>`                                  : ''}
+        ${onlineLocalNodes   ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>`                    : ''}
+        ${batteryLevel       ? `<tr><th>Power</th><td>${batteryLevel > 100 ? 'Plugged in' : `${batteryLevel}%`}` +
+                               `${voltage ? ` (${voltage.toFixed(2)}V)` : ''}</td></tr>`                             : ''}
+        ${chUtil             ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>`                              : ''}
+        ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
+        ${uptime             ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>`                                : ''}
+        ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
+                               `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
+        ${relativeHumidity   ? `<tr><th>Relative Humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>`        : ''}
+        ${barometricPressure ? `<tr><th>Barometric Pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
+        ${lux                ? `<tr><th>Lux</th><td>${Math.round(lux)} lx</td></tr>`                                 : ''}
+        ${windDirection || windSpeed ? `<tr><th>Wind</th><td>` +
+                                (windDirection ? `${windDirection}&#176;` : '') +
+                                (windDirection && windSpeed ? ' @ ' : '') +
+                                (windSpeed ? `${(windSpeed * 3.6).toFixed(1)}` : '') +
+                                (windSpeed && windGust ? ` G ${(windGust * 3.6).toFixed(1)}` : '') +
+                                (windSpeed ? ' km/h' : '') +
+                                `</td></tr>`                                                                         : ''}
+        ${radiation          ? `<tr><th>Radiation</th><td>${radiation.toFixed(2)} µR/h</td></tr>`                    : ''}
+        ${rainfall1 || rainfall24 ? `<tr><th>Rainfall</th><td>` +
+                                (rainfall1 ? `${rainfall1.toFixed(2)} mm/h` : '') +
+                                (rainfall1 && rainfall24 ? ', ' : '') +
+                                (rainfall24 ? `${rainfall24.toFixed(2)} mm/24h` : '') +
+                                `</td></tr>`                                                                         : ''}
+        ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
+        ${precision && precisionMargins[precision-1] ? `<tr><th>Location precision</th><td>` +
+                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
+        </tbody></table>
+        <table><thead>
+        <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
+        </thead><tbody>
+        ${Array.from(
+          new Map(
+            Object.entries(seenBy)
+              .map(([topic, seen]) => (match => ({seen, via: match[3] ?? id, root: match[1], chan: match[2]}))(
+                topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/s)
+              ))
+              .sort((a, b) => a.seen - b.seen)
+              .map(v => [v.via, v])
+          ).values(),
+          ({seen, via, root, chan}) => `
+            <tr>
+            <td>${since(seen)}</td>
+            <td>${via !== id ? (num => data[num] ? nodeLink(num, via) : via)(parseInt(via.slice(1), 16)) : 'self'}</td>
+            <td class="break">${html(root)}</td>
+            <td class="break">${html(chan ?? 'n/a (MapReport)')}</td>
+            </tr>
+          `
+        ).reverse().join('')}
+        </tbody></table>
+      `
       const searchString = `${longName} (${shortName}) ${id}`
       nodesBySearchString[searchString] = nodeNum
       markersByNode[nodeNum] = L.marker(position, {alt: 'Node', opacity, searchString})
@@ -390,22 +390,22 @@
           // draw relation lines
           drawRelationLines()
         })
-    if (nodeNum === lastActiveNode) {
-      if (popupWasOpen) {
-        reactivate = () => {
-          const cluster = markers.getVisibleParent(markersByNode[nodeNum])
-          if (typeof cluster?.spiderfy === 'function') {
-            cluster.spiderfy()
+      if (nodeNum === lastActiveNode) {
+        if (popupWasOpen) {
+          reactivate = () => {
+            const cluster = markers.getVisibleParent(markersByNode[nodeNum])
+            if (typeof cluster?.spiderfy === 'function') {
+              cluster.spiderfy()
+            }
+            markersByNode[nodeNum].openPopup()
           }
-          markersByNode[nodeNum].openPopup()
+        } else if (relationsLayerWasPopulated) {
+          reactivate = drawRelationLines
         }
-      } else if (relationsLayerWasPopulated) {
-        reactivate = drawRelationLines
       }
-    }
-  })
-  markers.addLayers(Object.values(markersByNode))
-  reactivate()
+    })
+    markers.addLayers(Object.values(markersByNode))
+    reactivate()
   }
   // fetches node data, updates map, repeats
   const drawMap = async () => {
