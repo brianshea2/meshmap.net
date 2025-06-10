@@ -15,10 +15,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="manifest" href="/site.webmanifest">
 <style>
-  html, body, #map {
-    height: 100%;
-    width: 100vw;
-  }
   body {
     margin: 0;
     padding: 0;
@@ -43,7 +39,7 @@
     font-size: 16px;
     line-height: 1.2;
     height: 40px;
-    padding: 0 17px 0 10px;
+    padding: 0 17px 0 15px;
     position: absolute;
     top: 0;
     left: 0;
@@ -64,6 +60,13 @@
     flex-grow: 1;
     text-align: right;
   }
+  #map {
+    position: absolute;
+    top: 40px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
   table {
     border-collapse: collapse;
   }
@@ -76,9 +79,6 @@
   }
   .break {
     word-break: break-all;
-  }
-  .leaflet-top {
-    top: 40px;
   }
   .leaflet-tooltip, .leaflet-popup-content {
     font-family: "Inter", sans-serif;
@@ -150,12 +150,11 @@
 <script src="https://unpkg.com/leaflet-search@4.0.0/dist/leaflet-search.min.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
+  let lastActiveNode
+  let markersByNode = {}
+  let nodesBySearchString = {}
   const ipinfoToken = 'aeb066758afd49'
   const updateInterval = 65000
-  const zoomLevelNode = 10
-  const markersByNode = {}
-  const neighborsByNode = {}
-  const nodesBySearchString = {}
   const precisionMargins = [
     11939464, 5969732, 2984866, 1492433, 746217, 373108, 186554, 93277,
     46639, 23319, 11660, 5830, 2915, 1457, 729, 364,
@@ -192,16 +191,15 @@
   // add tiles
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: 'Map tiles from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 19,
+    maxZoom: 17,
   }).addTo(map)
   // add marker group
   const markers = L.markerClusterGroup({
-    disableClusteringAtZoom: zoomLevelNode,
-    spiderfyOnMaxZoom: false,
+    maxClusterRadius: zoom => zoom < 14 ? 60 : 20,
   }).addTo(map)
-  // add node details layer (neighbor lines, precision circle)
-  const detailsLayer = L.layerGroup().addTo(map)
-  map.on('click', () => detailsLayer.clearLayers())
+  // add relation lines layer
+  const relationsLayer = L.layerGroup().addTo(map)
+  map.on('click', () => relationsLayer.clearLayers())
   // add search control
   map.addControl(new L.Control.Search({
     layer: markers,
@@ -224,7 +222,7 @@
         onClick: () => {
           fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
             .then(r => r.json())
-            .then(({loc}) => loc && map.flyTo(loc.split(','), zoomLevelNode))
+            .then(({loc}) => loc && map.flyTo(loc.split(','), 10))
             .catch(e => console.error('Failed to set location:', e))
         },
       },
@@ -248,7 +246,16 @@
   // generates html for a node link
   const nodeLink = (num, label) => `<a href="#${num}" onclick="showNode(${num});return false;">${html(label)}</a>`
   // updates node map markers
-  const updateNodes = data => Object.entries(data).forEach(([nodeNum, node]) => {
+  const updateNodes = data => {
+    const popupWasOpen = lastActiveNode && markersByNode[lastActiveNode]?.isPopupOpen()
+    const relationsLayerWasPopulated = relationsLayer.getLayers().length > 0
+    markersByNode = {}
+    nodesBySearchString = {}
+    markers.clearLayers()
+    relationsLayer.clearLayers()
+    let reactivate = () => {}
+    const relationsByNode = {}
+    Object.entries(data).forEach(([nodeNum, node]) => {
     const {
       longName, shortName, hwModel, role,
       fwVersion, region, modemPreset, hasDefaultCh, onlineLocalNodes,
@@ -259,15 +266,50 @@
       neighbors, seenBy
     } = node
     const id = `!${Number(nodeNum).toString(16)}`
-    neighborsByNode[nodeNum] ??= new Set()
+    const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+    const seenByNums = new Set(
+      Object.keys(seenBy)
+        .map(topic => topic.match(/\/!([0-9a-f]+)$/))
+        .filter(match => match)
+        .map(match => parseInt(match[1], 16))
+    )
+    relationsByNode[nodeNum] ??= {}
+    seenByNums.forEach(seenByNum => {
+      relationsByNode[seenByNum] ??= {}
+      const relationObj = relationsByNode[nodeNum][seenByNum] ?? relationsByNode[seenByNum][nodeNum] ?? {}
+      relationsByNode[nodeNum][seenByNum] = relationObj
+      relationsByNode[seenByNum][nodeNum] = relationObj
+      relationObj.mqtt = true
+    })
     if (neighbors) {
       Object.keys(neighbors).forEach(neighborNum => {
-        neighborsByNode[neighborNum] ??= new Set()
-        neighborsByNode[neighborNum].add(nodeNum)
-        neighborsByNode[nodeNum].add(neighborNum)
+        relationsByNode[neighborNum] ??= {}
+        const relationObj = relationsByNode[nodeNum][neighborNum] ?? relationsByNode[neighborNum][nodeNum] ?? {}
+        relationsByNode[nodeNum][neighborNum] = relationObj
+        relationsByNode[neighborNum][nodeNum] = relationObj
+        relationObj.neighbor = true
       })
     }
-    const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+    const drawRelationLines = () => {
+      relationsLayer.clearLayers()
+      Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
+        if (data[relatedNum] === undefined) {
+          return
+        }
+        const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
+        const relationContent = `
+          <table><tbody>
+          <tr><th>Relation type</th><td>${[relationObj.neighbor && 'Neighbor', relationObj.mqtt && 'MQTT uplink'].filter(v => v).join(', ')}</td></tr>
+          <tr><th>Distance</th><td>${Math.round(map.distance(position, relatedPosition)).toLocaleString()} m</td></tr>
+          ${neighbors?.[relatedNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[relatedNum].snr} dB</td></tr>` : ''}
+          </tbody></table>
+        `
+        L.polyline([position, relatedPosition])
+          .bindTooltip(relationContent, {opacity: 0.95, sticky: true})
+          .on('click', () => showNode(relatedNum))
+          .addTo(relationsLayer)
+      })
+    }
     const lastSeen = Math.max(...Object.values(seenBy))
     const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 129600
     const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
@@ -313,7 +355,7 @@
       ${Array.from(
         new Map(
           Object.entries(seenBy)
-            .map(([topic, seen]) => (m => ({seen, via: m[3] ?? id, root: m[1], chan: m[2]}))(
+            .map(([topic, seen]) => (match => ({seen, via: match[3] ?? id, root: match[1], chan: match[2]}))(
               topic.match(/^(.*)(?:\/2\/e\/(.*)\/(![0-9a-f]+)|\/2\/map\/)$/s)
             ))
             .sort((a, b) => a.seen - b.seen)
@@ -330,52 +372,41 @@
       ).reverse().join('')}
       </tbody></table>
     `
-    const populateDetailsLayer = () => {
-      detailsLayer.clearLayers()
-      if (precision && precisionMargins[precision-1]) {
-        L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'})
-          .addTo(detailsLayer)
-      }
-      neighborsByNode[nodeNum].forEach(neighborNum => {
-        if (markersByNode[neighborNum] === undefined) {
-          return
-        }
-        const neighborId = `!${Number(neighborNum).toString(16)}`
-        const neighborContent = `
-          <table><tbody>
-          <tr><th>Neighbor</th><td>${html(id)} &#60;-&#62; ${html(neighborId)}</td></tr>
-          <tr><th>Distance</th><td>${Math.round(map.distance(position, markersByNode[neighborNum].getLatLng())).toLocaleString()} m</td></tr>
-          ${neighbors?.[neighborNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[neighborNum].snr} dB</td></tr>` : ''}
-          ${neighbors?.[neighborNum]?.updated ? `<tr><th>Last seen</th><td>${since(neighbors[neighborNum].updated)}</td></tr>` : ''}
-          </tbody></table>
-        `
-        L.polyline([position, markersByNode[neighborNum].getLatLng()], {weight: 4})
-          .bindTooltip(neighborContent, {sticky: true})
-          .on('click', () => showNode(neighborNum))
-          .addTo(detailsLayer)
-      })
-    }
-    if (markersByNode[nodeNum] === undefined) {
       const searchString = `${longName} (${shortName}) ${id}`
       nodesBySearchString[searchString] = nodeNum
       markersByNode[nodeNum] = L.marker(position, {alt: 'Node', opacity, searchString})
-        .bindTooltip(tooltipContent)
-        .bindPopup(popupContent, {maxWidth: 500})
+        .bindTooltip(tooltipContent, {opacity: 0.95})
+        .bindPopup(popupContent, {maxWidth: 600})
         .on('popupopen', () => {
+          // set last active
+          lastActiveNode = nodeNum
+          // set URL fragment
           history.replaceState(null, '', `#${nodeNum}`)
-          populateDetailsLayer()
+          // draw precision circle
+          if (precision && precisionMargins[precision-1]) {
+            const circle = L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'}).addTo(map)
+            map.once('popupclose', () => circle.remove())
+          }
+          // draw relation lines
+          drawRelationLines()
         })
-        .addTo(markers)
-    } else {
-      markersByNode[nodeNum].setOpacity(opacity)
-      markersByNode[nodeNum].setTooltipContent(tooltipContent)
-      markersByNode[nodeNum].setPopupContent(popupContent)
-      markersByNode[nodeNum].setLatLng(position)
-      if (markersByNode[nodeNum].isPopupOpen()) {
-        populateDetailsLayer()
+    if (nodeNum === lastActiveNode) {
+      if (popupWasOpen) {
+        reactivate = () => {
+          const cluster = markers.getVisibleParent(markersByNode[nodeNum])
+          if (typeof cluster?.spiderfy === 'function') {
+            cluster.spiderfy()
+          }
+          markersByNode[nodeNum].openPopup()
+        }
+      } else if (relationsLayerWasPopulated) {
+        reactivate = drawRelationLines
       }
     }
   })
+  markers.addLayers(Object.values(markersByNode))
+  reactivate()
+  }
   // fetches node data, updates map, repeats
   const drawMap = async () => {
     try {
@@ -392,13 +423,17 @@
       }
     }, updateInterval)
   }
-  // centers map to node and opens popup
+  // pans and zooms map to node and opens popup
   const showNode = nodeNum => {
     if (markersByNode[nodeNum] === undefined) {
       return false
     }
-    map.setView(markersByNode[nodeNum].getLatLng(), Math.max(window.localStorage.getItem('zoom') ?? 0, zoomLevelNode))
-    setTimeout(() => markersByNode[nodeNum].openPopup(), 300)
+    map.panTo(markersByNode[nodeNum].getLatLng())
+    setTimeout(() => {
+      markers.zoomToShowLayer(markersByNode[nodeNum], () => {
+        markersByNode[nodeNum].openPopup()
+      })
+    }, 300)
     return true
   }
   // keep URL fragment in sync
@@ -408,6 +443,7 @@
     }
     if (!window.location.hash) {
       map.closePopup()
+      relationsLayer.clearLayers()
     }
   })
   map.on('popupclose', () => {
