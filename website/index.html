@@ -198,7 +198,7 @@
   }).addTo(map)
   // add marker group
   const markers = L.markerClusterGroup({
-    maxClusterRadius: zoom => zoom < 14 ? 60 : 20,
+    maxClusterRadius: zoom => zoom < 3 ? 40 : 30,
   }).addTo(map)
   // add relation lines layer
   const relationsLayer = L.layerGroup().addTo(map)
@@ -320,21 +320,21 @@
         <div class="title">${html(longName)} (${html(shortName)})</div>
         <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
         <table><tbody>
-        ${fwVersion          ? `<tr><th>Firmware</th><td>${html(fwVersion)}</td></tr>`                               : ''}
-        ${region             ? `<tr><th>Region</th><td>${html(region)}</td></tr>`                                    : ''}
-        ${modemPreset        ? `<tr><th>Modem preset</th><td>${html(modemPreset)}</td></tr>`                         : ''}
-        ${hasDefaultCh       ? `<tr><th>Has default channel</th><td>True</td></tr>`                                  : ''}
-        ${onlineLocalNodes   ? `<tr><th>Online local nodes</th><td>${onlineLocalNodes}</td></tr>`                    : ''}
+        ${uptime             ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>`                                : ''}
         ${batteryLevel       ? `<tr><th>Power</th><td>${batteryLevel > 100 ? 'Plugged in' : `${batteryLevel}%`}` +
                                `${voltage ? ` (${voltage.toFixed(2)}V)` : ''}</td></tr>`                             : ''}
+        ${fwVersion          ? `<tr><th>Firmware</th><td>${html(fwVersion)}</td></tr>`                               : ''}
+        ${region             ? `<tr><th>LoRa config</th><td>${html(region)} / ${html(modemPreset)}</td></tr>`        : ''}
         ${chUtil             ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>`                              : ''}
         ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
-        ${uptime             ? `<tr><th>Uptime</th><td>${duration(uptime)}</td></tr>`                                : ''}
+        ${onlineLocalNodes   ? `<tr><th>Local nodes</th><td>${onlineLocalNodes}</td></tr>`                           : ''}
+        ${precision && precisionMargins[precision-1] ? `<tr><th>Map privacy</th><td>` +
+                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
+        ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
         ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
                                `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
-        ${relativeHumidity   ? `<tr><th>Relative Humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>`        : ''}
-        ${barometricPressure ? `<tr><th>Barometric Pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
-        ${lux                ? `<tr><th>Lux</th><td>${Math.round(lux)} lx</td></tr>`                                 : ''}
+        ${relativeHumidity   ? `<tr><th>Relative humidity</th><td>${Math.round(relativeHumidity)}%</td></tr>`        : ''}
+        ${barometricPressure ? `<tr><th>Barometric pressure</th><td>${Math.round(barometricPressure)} hPa</td></tr>` : ''}
         ${windDirection || windSpeed ? `<tr><th>Wind</th><td>` +
                                 (windDirection ? `${windDirection}&#176;` : '') +
                                 (windDirection && windSpeed ? ' @ ' : '') +
@@ -342,18 +342,16 @@
                                 (windSpeed && windGust ? ` G ${(windGust * 3.6).toFixed(1)}` : '') +
                                 (windSpeed ? ' km/h' : '') +
                                 `</td></tr>`                                                                         : ''}
+        ${lux                ? `<tr><th>Lux</th><td>${Math.round(lux)} lx</td></tr>`                                 : ''}
         ${radiation          ? `<tr><th>Radiation</th><td>${radiation.toFixed(2)} µR/h</td></tr>`                    : ''}
         ${rainfall1 || rainfall24 ? `<tr><th>Rainfall</th><td>` +
                                 (rainfall1 ? `${rainfall1.toFixed(2)} mm/h` : '') +
                                 (rainfall1 && rainfall24 ? ', ' : '') +
                                 (rainfall24 ? `${rainfall24.toFixed(2)} mm/24h` : '') +
                                 `</td></tr>`                                                                         : ''}
-        ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
-        ${precision && precisionMargins[precision-1] ? `<tr><th>Location precision</th><td>` +
-                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
         </tbody></table>
         <table><thead>
-        <tr><th>Last seen</th><th>via</th><th>root topic</th><th>channel</th></tr>
+        <tr><th>Last seen</th><th>via</th><th>MQTT root</th><th>channel</th></tr>
         </thead><tbody>
         ${Array.from(
           new Map(
@@ -367,9 +365,9 @@
           ({seen, via, root, chan}) => `
             <tr>
             <td>${since(seen)}</td>
-            <td>${via !== id ? (num => data[num] ? nodeLink(num, via) : via)(parseInt(via.slice(1), 16)) : 'self'}</td>
+            <td>${chan ? ((n, l) => data[n] ? nodeLink(n, l) : l)(parseInt(via.slice(1), 16), via === id ? 'self' : via) : 'MapReport'}</td>
             <td class="break">${html(root)}</td>
-            <td class="break">${html(chan ?? 'n/a (MapReport)')}</td>
+            <td class="break">${html(chan ?? 'n/a')}</td>
             </tr>
           `
         ).reverse().join('')}
