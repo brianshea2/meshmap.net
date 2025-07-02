@@ -200,9 +200,9 @@
   const markers = L.markerClusterGroup({
     maxClusterRadius: zoom => zoom < 3 ? 40 : 30,
   }).addTo(map)
-  // add relation lines layer
-  const relationsLayer = L.layerGroup().addTo(map)
-  map.on('click', () => relationsLayer.clearLayers())
+  // add node details layer (precision circle, relation lines)
+  const detailsLayer = L.layerGroup().addTo(map)
+  map.on('click', () => detailsLayer.clearLayers())
   // add search control
   map.addControl(new L.Control.Search({
     layer: markers,
@@ -251,11 +251,11 @@
   // updates node map markers
   const updateNodes = data => {
     const popupWasOpen = lastActiveNode && markersByNode[lastActiveNode]?.isPopupOpen()
-    const relationsLayerWasPopulated = relationsLayer.getLayers().length > 0
+    const detailsLayerWasPopulated = detailsLayer.getLayers().length > 0
     markersByNode = {}
     nodesBySearchString = {}
     markers.clearLayers()
-    relationsLayer.clearLayers()
+    detailsLayer.clearLayers()
     let reactivate = () => {}
     const relationsByNode = {}
     Object.entries(data).forEach(([nodeNum, node]) => {
@@ -293,8 +293,13 @@
           relationObj.neighbor = true
         })
       }
-      const drawRelationLines = () => {
-        relationsLayer.clearLayers()
+      const drawNodeDetails = () => {
+        detailsLayer.clearLayers()
+        // precision circle
+        if (precision && precisionMargins[precision-1]) {
+          L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'}).addTo(detailsLayer)
+        }
+        // relation lines
         Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
           if (data[relatedNum] === undefined) {
             return
@@ -302,6 +307,7 @@
           const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
           const relationContent = `
             <table><tbody>
+            <tr><th>Nodes</th><td>${nodeLink(nodeNum, id)}, ${nodeLink(relatedNum, `!${Number(relatedNum).toString(16)}`)}</td></tr>
             <tr><th>Relation type</th><td>${[relationObj.neighbor && 'Neighbor', relationObj.mqtt && 'MQTT uplink'].filter(v => v).join(', ')}</td></tr>
             <tr><th>Distance</th><td>${Math.round(map.distance(position, relatedPosition)).toLocaleString()} m</td></tr>
             ${neighbors?.[relatedNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[relatedNum].snr} dB</td></tr>` : ''}
@@ -310,7 +316,7 @@
           L.polyline([position, relatedPosition])
             .bindTooltip(relationContent, {opacity: 0.95, sticky: true})
             .on('click', () => showNode(relatedNum))
-            .addTo(relationsLayer)
+            .addTo(detailsLayer)
         })
       }
       const lastSeen = Math.max(...Object.values(seenBy))
@@ -383,13 +389,8 @@
           lastActiveNode = nodeNum
           // set URL fragment
           history.replaceState(null, '', `#${nodeNum}`)
-          // draw precision circle
-          if (precision && precisionMargins[precision-1]) {
-            const circle = L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'}).addTo(map)
-            map.once('popupclose', () => circle.remove())
-          }
-          // draw relation lines
-          drawRelationLines()
+          // draw precision circle, relation lines
+          drawNodeDetails()
         })
       if (nodeNum === lastActiveNode) {
         if (popupWasOpen) {
@@ -400,8 +401,8 @@
             }
             markersByNode[nodeNum].openPopup()
           }
-        } else if (relationsLayerWasPopulated) {
-          reactivate = drawRelationLines
+        } else if (detailsLayerWasPopulated) {
+          reactivate = drawNodeDetails
         }
       }
     })
@@ -444,7 +445,7 @@
     }
     if (!window.location.hash) {
       map.closePopup()
-      relationsLayer.clearLayers()
+      detailsLayer.clearLayers()
     }
   })
   map.on('popupclose', () => {
