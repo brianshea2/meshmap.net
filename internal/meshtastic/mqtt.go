@@ -84,7 +84,7 @@ func (c *MQTTClient) handleMessage(_ mqtt.Client, msg mqtt.Message) {
 	// parse ServiceEnvelope
 	var envelope generated.ServiceEnvelope
 	if err := proto.Unmarshal(msg.Payload(), &envelope); err != nil {
-		log.Printf("[warn] could not parse ServiceEnvelope on %v: %v", topic, err)
+		// ignore non-Meshtastic payloads
 		return
 	}
 	// get MeshPacket
