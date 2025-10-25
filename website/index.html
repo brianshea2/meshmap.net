@@ -118,10 +118,10 @@
       return true
     }
     document.querySelector('meta[name="theme-color"]').content = '#fff'
-    window.localStorage.removeItem('theme')
+    window.localStorage.setItem('theme', 'light')
     return false
   }
-  if (window.localStorage.getItem('theme') === 'dark') {
+  if (window.localStorage.getItem('theme') !== 'light') {
     document.addEventListener('DOMContentLoaded', () => toggleDark())
   }
 </script>
@@ -183,6 +183,13 @@
     return s
   }
   const since = t => `${duration(Date.now() / 1000 - t)} ago`
+  // happy Halloween!
+  L.Marker.prototype.options.icon = L.icon({
+    iconUrl: '/meshkin.png',
+    iconSize: [36, 36],
+    popupAnchor: [2, -16],
+    tooltipAnchor: [0, 6]
+  })
   // init map
   const map = L.map('map', {
     center: window.localStorage.getItem('center')?.split(',') ?? [25, 0],
