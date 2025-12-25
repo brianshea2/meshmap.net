@@ -326,6 +326,10 @@
       const lastSeen = Math.max(...Object.values(seenBy))
       const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 32400
       const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
+      var calcRealPrecision = function(precision) {
+        const precisionLng = precision * Math.cos(position.lat * Math.PI / 180)
+        return Math.round(Math.sqrt(precision * precision + precisionLng * precisionLng))
+      }
       const popupContent = `
         <div class="title">${html(longName)} (${html(shortName)})</div>
         <div>${nodeLink(nodeNum, id)} | ${html(role)} | ${html(hwModel)}</div>
@@ -339,7 +343,7 @@
         ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
         ${onlineLocalNodes   ? `<tr><th>Local nodes</th><td>${onlineLocalNodes}</td></tr>`                           : ''}
         ${precision && precisionMargins[precision-1] ? `<tr><th>Map privacy</th><td>` +
-                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange rectangle)</td></tr>` : ''}
+                               `&#177;${calcRealPrecision(precisionMargins[precision-1]).toLocaleString()} m (orange rectangle)</td></tr>` : ''}
         ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
         ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
                                `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
