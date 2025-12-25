@@ -200,7 +200,7 @@
   const markers = L.markerClusterGroup({
     maxClusterRadius: zoom => zoom < 3 ? 40 : 30,
   }).addTo(map)
-  // add node details layer (precision circle, relation lines)
+  // add node details layer (precision rectangle, relation lines)
   const detailsLayer = L.layerGroup().addTo(map)
   map.on('click', () => detailsLayer.clearLayers())
   // add search control
@@ -295,9 +295,13 @@
       }
       const drawNodeDetails = () => {
         detailsLayer.clearLayers()
-        // precision circle
+        // precision rectangle
         if (precision && precisionMargins[precision-1]) {
-          L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'}).addTo(detailsLayer)
+          const precisionDegree = precisionMargins[precision-1] * 180 / (L.CRS.Earth.R * Math.PI)
+          L.rectangle([
+            L.latLng(position.lat - precisionDegree, position.lng - precisionDegree),
+            L.latLng(position.lat + precisionDegree, position.lng + precisionDegree)
+          ], {color: '#ffa932'}).addTo(detailsLayer)
         }
         // relation lines
         Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
@@ -335,7 +339,7 @@
         ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
         ${onlineLocalNodes   ? `<tr><th>Local nodes</th><td>${onlineLocalNodes}</td></tr>`                           : ''}
         ${precision && precisionMargins[precision-1] ? `<tr><th>Map privacy</th><td>` +
-                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
+                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange rectangle)</td></tr>` : ''}
         ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
         ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
                                `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
@@ -389,7 +393,7 @@
           lastActiveNode = nodeNum
           // set URL fragment
           history.replaceState(null, '', `#${nodeNum}`)
-          // draw precision circle, relation lines
+          // draw precision rectangle, relation lines
           drawNodeDetails()
         })
       if (nodeNum === lastActiveNode) {
