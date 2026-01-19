@@ -35,6 +35,12 @@ Note: The "Map reporting" option in the MQTT configuration reports [additional d
 ### Does the map allow manual/self-reported nodes (not over MQTT)?
 No, and that's a feature. The goal of this map is to provide a reasonably up-to-date, reliable data source for node locations.
 
+### What do the lines drawn between nodes represent?
+When a node is selected, lines may appear between it and nearby nodes.
+These lines indicate communication between nodes over LoRa, but not necessarily a direct connection.
+Nodes reporting to MQTT are shown to be communicating with the nodes they report, but the path (hops) is unknown.
+[Neighbor Info](https://meshtastic.org/docs/configuration/module/neighbor-info/) reports are parsed to show connections between neighbors.
+
 ### Can you add this awesome new feature I just came up with? (Or you'd like to report a bug)
 Maybe! Open a GitHub issue and let's discuss it. Pull requests welcome!
 
