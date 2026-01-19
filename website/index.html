@@ -307,7 +307,7 @@
           const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
           const relationContent = `
             <table><tbody>
-            <tr><th>Nodes</th><td>${nodeLink(nodeNum, id)}, ${nodeLink(relatedNum, `!${Number(relatedNum).toString(16)}`)}</td></tr>
+            <tr><th>Related node</th><td>${nodeLink(relatedNum, `!${Number(relatedNum).toString(16)}`)}</td></tr>
             <tr><th>Relation type</th><td>${[relationObj.neighbor && 'Neighbor', relationObj.mqtt && 'MQTT uplink'].filter(v => v).join(', ')}</td></tr>
             <tr><th>Distance</th><td>${Math.round(map.distance(position, relatedPosition)).toLocaleString()} m</td></tr>
             ${neighbors?.[relatedNum]?.snr ? `<tr><th>SNR</th><td>${neighbors[relatedNum].snr} dB</td></tr>` : ''}
@@ -320,7 +320,7 @@
         })
       }
       const lastSeen = Math.max(...Object.values(seenBy))
-      const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 129600
+      const opacity = 1.0 - (Date.now() / 1000 - lastSeen) / 32400
       const tooltipContent = `${html(longName)} (${html(shortName)}) ${since(lastSeen)}`
       const popupContent = `
         <div class="title">${html(longName)} (${html(shortName)})</div>
