@@ -158,12 +158,6 @@
   let nodesBySearchString = {}
   const ipinfoToken = 'aeb066758afd49'
   const updateInterval = 65000
-  const precisionMargins = [
-    11939464, 5969732, 2984866, 1492433, 746217, 373108, 186554, 93277,
-    46639, 23319, 11660, 5830, 2915, 1457, 729, 364,
-    182, 91, 46, 23, 11, 6, 3, 1,
-    1, 0, 0, 0, 0, 0, 0, 0
-  ]
   // encodes html reserved characters and ascii control characters
   const html = str => str
     ?.replace(/[\x00-\x1F]/g, c => `\\x${c.charCodeAt(0).toString(16).toUpperCase().padStart(2, '0')}`)
@@ -200,7 +194,7 @@
   const markers = L.markerClusterGroup({
     maxClusterRadius: zoom => zoom < 3 ? 40 : 30,
   }).addTo(map)
-  // add node details layer (precision circle, relation lines)
+  // add node details layer (precision rectangle, relation lines)
   const detailsLayer = L.layerGroup().addTo(map)
   map.on('click', () => detailsLayer.clearLayers())
   // add search control
@@ -269,7 +263,16 @@
         neighbors, seenBy
       } = node
       const id = `!${Number(nodeNum).toString(16)}`
-      const position = L.latLng([latitude, longitude].map(x => x / 10000000))
+      const position = [latitude, longitude].map(x => x / 10000000)
+      let precisionCorners
+      if (precision && precision > 0 && precision < 32) {
+        const [latLo, latHi] = [latitude & (0xffffffff << (32 - precision)), latitude | (0xffffffff >>> precision)].sort((a, b) => a - b)
+        const [longLo, longHi] = [longitude & (0xffffffff << (32 - precision)), longitude | (0xffffffff >>> precision)].sort((a, b) => a - b)
+        precisionCorners = [
+          [latLo, longLo].map(x => x / 10000000),
+          [latHi, longHi].map(x => x / 10000000)
+        ]
+      }
       const seenByNums = new Set(
         Object.keys(seenBy)
           .map(topic => topic.match(/\/!([0-9a-f]+)$/))
@@ -295,16 +298,16 @@
       }
       const drawNodeDetails = () => {
         detailsLayer.clearLayers()
-        // precision circle
-        if (precision && precisionMargins[precision-1]) {
-          L.circle(position, {radius: precisionMargins[precision-1], color: '#ffa932'}).addTo(detailsLayer)
+        // precision rectangle
+        if (precisionCorners) {
+          L.rectangle(precisionCorners, {color: '#ffa932'}).addTo(detailsLayer)
         }
         // relation lines
         Object.entries(relationsByNode[nodeNum]).forEach(([relatedNum, relationObj]) => {
           if (data[relatedNum] === undefined) {
             return
           }
-          const relatedPosition = L.latLng([data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000))
+          const relatedPosition = [data[relatedNum].latitude, data[relatedNum].longitude].map(x => x / 10000000)
           const relationContent = `
             <table><tbody>
             <tr><th>Related node</th><td>${nodeLink(relatedNum, `!${Number(relatedNum).toString(16)}`)}</td></tr>
@@ -334,8 +337,9 @@
         ${chUtil             ? `<tr><th>ChUtil</th><td>${chUtil.toFixed(2)}%</td></tr>`                              : ''}
         ${airUtilTx          ? `<tr><th>AirUtilTX</th><td>${airUtilTx.toFixed(2)}%</td></tr>`                        : ''}
         ${onlineLocalNodes   ? `<tr><th>Local nodes</th><td>${onlineLocalNodes}</td></tr>`                           : ''}
-        ${precision && precisionMargins[precision-1] ? `<tr><th>Map privacy</th><td>` +
-                               `&#177;${precisionMargins[precision-1].toLocaleString()} m (orange circle)</td></tr>` : ''}
+        ${precisionCorners   ? `<tr><th>Map precision</th><td>` +
+                               `&#177;${Math.round(map.distance(...precisionCorners) / 2).toLocaleString()} m` +
+                               ` (orange rectangle)</td></tr>`                                                       : ''}
         ${altitude           ? `<tr><th>Altitude</th><td>${altitude.toLocaleString()} m above MSL</td></tr>`         : ''}
         ${temperature        ? `<tr><th>Temperature</th><td>${temperature.toFixed(1)}&#8451; / ` +
                                `${(temperature * 1.8 + 32).toFixed(1)}&#8457;</td></tr>`                             : ''}
@@ -389,7 +393,7 @@
           lastActiveNode = nodeNum
           // set URL fragment
           history.replaceState(null, '', `#${nodeNum}`)
-          // draw precision circle, relation lines
+          // draw precision rectangle, relation lines
           drawNodeDetails()
         })
       if (nodeNum === lastActiveNode) {
