@@ -1,0 +1,31 @@
+services:
+  meshobserv:
+    build:
+      context: .
+      dockerfile: Dockerfile.meshobserv
+    volumes:
+      - website_data:/data/meshmap.net/website
+      - ./configs/blocklist.txt:/data/meshmap.net/blocklist.txt:ro
+    command:
+      - "-f"
+      - "/data/meshmap.net/website/nodes.json"
+      - "-b"
+      - "/data/meshmap.net/blocklist.txt"
+    environment:
+      MQTT_BROKER: ${MQTT_BROKER:-tcp://mqtt.meshtastic.org:1883}
+      MQTT_USERNAME: ${MQTT_USERNAME:-meshdev}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-large4cats}
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    volumes:
+      - website_data:/data/meshmap.net/website
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
+volumes:
+  website_data:

@@ -43,10 +43,22 @@ func (c *MQTTClient) Connect() error {
 	randomId := make([]byte, 4)
 	rand.Read(randomId)
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://mqtt.meshtastic.org:1883")
+	broker := os.Getenv("MQTT_BROKER")
+	if broker == "" {
+		broker = "tcp://mqtt.meshtastic.org:1883"
+	}
+	username := os.Getenv("MQTT_USERNAME")
+	if username == "" {
+		username = "meshdev"
+	}
+	password := os.Getenv("MQTT_PASSWORD")
+	if password == "" {
+		password = "large4cats"
+	}
+	opts.AddBroker(broker)
 	opts.SetClientID(fmt.Sprintf("meshobserv-%x", randomId))
-	opts.SetUsername("meshdev")
-	opts.SetPassword("large4cats")
+	opts.SetUsername(username)
+	opts.SetPassword(password)
 	opts.SetOrderMatters(false)
 	opts.SetDefaultPublishHandler(c.handleMessage)
 	c.Client = mqtt.NewClient(opts)

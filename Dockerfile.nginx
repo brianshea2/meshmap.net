@@ -1,0 +1,5 @@
+FROM nginx:alpine
+COPY website/ /website-static/
+COPY configs/nginx-http.conf /etc/nginx/conf.d/default.conf
+COPY scripts/init-website.sh /docker-entrypoint.d/50-init-website.sh
+RUN chmod +x /docker-entrypoint.d/50-init-website.sh
