@@ -4,7 +4,7 @@ COPY go.mod ./
 COPY cmd/meshobserv ./
 COPY internal ./internal/
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends protobuf-compiler git && \
+    apt-get install -y --no-install-recommends protobuf-compiler libprotobuf-dev git && \
     rm -rf /var/lib/apt/lists/*
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN git clone --depth 1 https://github.com/meshtastic/protobufs.git /tmp/protobufs && \
