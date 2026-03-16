@@ -3,6 +3,17 @@ WORKDIR /build
 COPY go.mod ./
 COPY cmd/meshobserv ./
 COPY internal ./internal/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends protobuf-compiler git && \
+    rm -rf /var/lib/apt/lists/*
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+RUN git clone --depth 1 https://github.com/meshtastic/protobufs.git /tmp/protobufs && \
+    protoc \
+        -I=/tmp/protobufs \
+        --go_out=/build/internal/meshtastic \
+        --go_opt=module=github.com/meshtastic/go \
+        /tmp/protobufs/nanopb.proto \
+        /tmp/protobufs/meshtastic/*.proto
 RUN go mod tidy
 RUN go build -v -o meshobserv
 
