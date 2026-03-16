@@ -10,6 +10,7 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN git clone --depth 1 https://github.com/meshtastic/protobufs.git /tmp/protobufs && \
     protoc \
         -I=/tmp/protobufs \
+        -I=/usr/include \
         --go_out=/build/internal/meshtastic \
         --go_opt=module=github.com/meshtastic/go \
         /tmp/protobufs/nanopb.proto \
