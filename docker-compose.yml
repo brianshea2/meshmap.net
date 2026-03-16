@@ -5,12 +5,11 @@ services:
       dockerfile: Dockerfile.meshobserv
     volumes:
       - ./website:/data/meshmap.net/website
-      - ./configs/blocklist.txt:/data/meshmap.net/blocklist.txt:ro
-    command:
-      - "-f"
-      - "/data/meshmap.net/website/nodes.json"
-      - "-b"
-      - "/data/meshmap.net/blocklist.txt"
+      - ./configs:/data/meshmap.net/configs
+    entrypoint:
+      - "/bin/sh"
+      - "-c"
+      - "touch /data/meshmap.net/configs/blocklist.txt && exec /usr/bin/meshobserv -f /data/meshmap.net/website/nodes.json -b /data/meshmap.net/configs/blocklist.txt"
     environment:
       MQTT_BROKER: ${MQTT_BROKER:-tcp://mqtt.meshtastic.org:1883}
       MQTT_USERNAME: ${MQTT_USERNAME:-meshdev}
