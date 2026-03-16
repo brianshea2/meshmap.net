@@ -24,7 +24,7 @@ services:
     volumes:
       - website_data:/data/meshmap.net/website
     ports:
-      - "80:80"
+      - "${HTTP_PORT:-10081}:80"
     restart: unless-stopped
 
 volumes:
