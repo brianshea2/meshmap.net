@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile.meshobserv
     volumes:
-      - website_data:/data/meshmap.net/website
+      - ./website:/data/meshmap.net/website
       - ./configs/blocklist.txt:/data/meshmap.net/blocklist.txt:ro
     command:
       - "-f"
@@ -18,14 +18,10 @@ services:
     restart: unless-stopped
 
   nginx:
-    build:
-      context: .
-      dockerfile: Dockerfile.nginx
+    image: nginx:alpine
     volumes:
-      - website_data:/data/meshmap.net/website
+      - ./website:/data/meshmap.net/website:ro
+      - ./configs/nginx-http.conf:/etc/nginx/conf.d/default.conf:ro
     ports:
       - "${HTTP_PORT:-10081}:80"
     restart: unless-stopped
-
-volumes:
-  website_data:
