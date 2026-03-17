@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	NodeExpiration     = 21600 // 6 hr
+	NodeExpiration     = 28800 // 8 hr
 	NeighborExpiration = 7200  // 2 hr
 	MetricsExpiration  = 7200  // 2 hr
 	PruneWriteInterval = time.Minute

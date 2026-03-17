@@ -5,7 +5,7 @@ A nearly live map of [Meshtastic](https://meshtastic.org/) nodes seen by the off
 - Shows all position-reporting nodes heard by Meshtastic's [Public MQTT Server](https://meshtastic.org/docs/software/integrations/mqtt/#public-mqtt-server)
   - Includes nodes self-reporting to MQTT or heard by another node reporting to MQTT
 - Node data is updated every minute
-- Nodes are removed from the map if their position is not updated after 6 hours
+- Nodes are removed from the map if their position is not updated after 8 hours
 - Search for nodes by name or ID
 
 ## FAQs
