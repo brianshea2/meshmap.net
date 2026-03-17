@@ -46,9 +46,3 @@ Maybe! Open a GitHub issue and let's discuss it. Pull requests welcome!
 
 ### Can I use your code for my own map?
 Sure! But please pay attention to the license so we can all benefit from your improvements. :)
-
-### Why do I get an error when trying to build the Docker image?
-The included Dockerfile is for building the `meshobserv` program, which is responsible for connecting to the MQTT server and handling node messages.
-Meshtastic nodes use [Protocol Buffers](https://protobuf.dev/) to serialize their messages.
-The Meshtastic protobuf definitions must be compiled before building `meshobserv`.
-See the `scripts` directory for helpful build scripts.

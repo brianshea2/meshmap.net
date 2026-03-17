@@ -1,7 +1,5 @@
 #!/bin/bash
 
-bash "$(dirname "$0")/generate-pb.sh" || exit $?
-
 docker build \
     --no-cache \
     --pull \

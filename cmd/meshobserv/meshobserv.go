@@ -25,8 +25,8 @@ const (
 	NeighborExpiration = 7200  // 2 hr
 	MetricsExpiration  = 7200  // 2 hr
 	PruneWriteInterval = time.Minute
-	RateLimitCount     = 300
-	RateLimitDuration  = time.Minute
+	RateLimitCount     = 1500
+	RateLimitDuration  = 5 * time.Minute
 )
 
 var (
@@ -190,9 +190,12 @@ func handleMessage(from uint32, topic string, portNum generated.PortNum, payload
 }
 
 func main() {
-	var dbPath, blockedPath string
+	var dbPath, blockedPath, broker, username, password string
 	flag.StringVar(&dbPath, "f", "", "node database `file`")
 	flag.StringVar(&blockedPath, "b", "", "node blocklist `file`")
+	flag.StringVar(&broker, "m", "tcp://mqtt.meshtastic.org:1883", "MQTT broker `URL`")
+	flag.StringVar(&username, "u", "meshdev", "MQTT broker `username`")
+	flag.StringVar(&password, "p", "large4cats", "MQTT broker `password`")
 	flag.Parse()
 	// load or make NodeDB
 	if len(dbPath) > 0 {
@@ -236,6 +239,9 @@ func main() {
 	}()
 	// connect to MQTT
 	client := &meshtastic.MQTTClient{
+		Broker:   broker,
+		Username: username,
+		Password: password,
 		Topics: []string{
 			"msh/+/2/map/",
 			"msh/+/2/e/+/+",
