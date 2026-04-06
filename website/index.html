@@ -156,7 +156,6 @@
   let lastActiveNode
   let markersByNode = {}
   let nodesBySearchString = {}
-  const ipinfoToken = 'aeb066758afd49'
   const updateInterval = 65000
   // encodes html reserved characters and ascii control characters
   const html = str => str
@@ -217,7 +216,7 @@
         title: 'Center map to current IP geolocation',
         icon: 'fa-crosshairs fa-lg',
         onClick: () => {
-          fetch(`https://ipinfo.io/json?token=${ipinfoToken}`)
+          fetch('https://ipinfo.io/', {headers: {Accept: 'application/json'}})
             .then(r => r.json())
             .then(({loc}) => loc && map.flyTo(loc.split(','), 10))
             .catch(e => console.error('Failed to set location:', e))
