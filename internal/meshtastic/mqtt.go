@@ -31,6 +31,9 @@ func NewBlockCipher(key []byte) cipher.Block {
 }
 
 type MQTTClient struct {
+	Broker         string
+	Username       string
+	Password       string
 	Topics         []string
 	TopicRegex     *regexp.Regexp
 	Accept         func(from uint32) bool
@@ -43,10 +46,10 @@ func (c *MQTTClient) Connect() error {
 	randomId := make([]byte, 4)
 	rand.Read(randomId)
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker("tcp://mqtt.meshtastic.org:1883")
+	opts.AddBroker(c.Broker)
 	opts.SetClientID(fmt.Sprintf("meshobserv-%x", randomId))
-	opts.SetUsername("meshdev")
-	opts.SetPassword("large4cats")
+	opts.SetUsername(c.Username)
+	opts.SetPassword(c.Password)
 	opts.SetOrderMatters(false)
 	opts.SetDefaultPublishHandler(c.handleMessage)
 	c.Client = mqtt.NewClient(opts)

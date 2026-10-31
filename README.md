@@ -5,7 +5,7 @@ A nearly live map of [Meshtastic](https://meshtastic.org/) nodes seen by the off
 - Shows all position-reporting nodes heard by Meshtastic's [Public MQTT Server](https://meshtastic.org/docs/software/integrations/mqtt/#public-mqtt-server)
   - Includes nodes self-reporting to MQTT or heard by another node reporting to MQTT
 - Node data is updated every minute
-- Nodes are removed from the map if their position is not updated after 24 hours
+- Nodes are removed from the map if their position is not updated after 8 hours
 - Search for nodes by name or ID
 
 ## FAQs
@@ -34,16 +34,15 @@ Note: The "Map reporting" option in the MQTT configuration reports [additional d
 
 ### Does the map allow manual/self-reported nodes (not over MQTT)?
 No, and that's a feature. The goal of this map is to provide a reasonably up-to-date, reliable data source for node locations.
-This is also why nodes are removed if no position reports are heard after 24 hours.
+
+### What do the lines drawn between nodes represent?
+When a node is selected, lines may appear between it and nearby nodes.
+These lines indicate communication between nodes over LoRa, but not necessarily a direct connection.
+Nodes reporting to MQTT are shown to be communicating with the nodes they report, but the path (hops) is unknown.
+[Neighbor Info](https://meshtastic.org/docs/configuration/module/neighbor-info/) reports are parsed to show connections between neighbors.
 
 ### Can you add this awesome new feature I just came up with? (Or you'd like to report a bug)
 Maybe! Open a GitHub issue and let's discuss it. Pull requests welcome!
 
 ### Can I use your code for my own map?
 Sure! But please pay attention to the license so we can all benefit from your improvements. :)
-
-### Why do I get an error when trying to build the Docker image?
-The included Dockerfile is for building the `meshobserv` program, which is responsible for connecting to the MQTT server and handling node messages.
-Meshtastic nodes use [Protocol Buffers](https://protobuf.dev/) to serialize their messages.
-The Meshtastic protobuf definitions must be compiled before building `meshobserv`.
-See the `scripts` directory for helpful build scripts.
